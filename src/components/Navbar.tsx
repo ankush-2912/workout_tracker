@@ -1,93 +1,121 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Menu, X, Dumbbell } from "lucide-react";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-
-  const navigation = [
-    { name: "Home", href: "/" },
-    { name: "Exercises", href: "/exercises" },
-    { name: "Calculator", href: "/calculator" },
-    { name: "Blog", href: "/blog" },
+  
+  const isActive = (path: string) => location.pathname === path;
+  
+  const navLinks = [
+    { label: 'Home', path: '/' },
+    { label: 'Exercises', path: '/exercises' },
+    { label: 'Workout Tracker', path: '/workout-tracker' },
+    { label: 'Nutrition', path: '/calculator' },
+    { label: 'Blog', path: '/blog' },
   ];
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <Dumbbell className="h-8 w-8 text-primary" />
-              <span className="ml-2 text-xl font-bold text-gray-900">FitPro</span>
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center py-4 md:space-x-10">
+          <div className="flex justify-start lg:w-0 lg:flex-1">
+            <Link to="/" className="flex items-center">
+              <span className="sr-only">FitTrack</span>
+              <div className="h-10 w-10 rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+                <Dumbbell className="h-6 w-6 text-white" />
+              </div>
+              <span className="ml-2 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-transparent bg-clip-text">FitTrack</span>
             </Link>
           </div>
           
-          <div className="hidden md:flex md:items-center md:space-x-6">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname === item.href
-                    ? "text-primary"
-                    : "text-gray-700 hover:text-primary"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-            <Button className="ml-3">Get Started</Button>
+          <div className="-mr-2 -my-2 md:hidden">
+            <Button
+              variant="ghost"
+              className="rounded-md p-2"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <span className="sr-only">Open menu</span>
+              {isMenuOpen ? (
+                <X className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="h-6 w-6" aria-hidden="true" />
+              )}
+            </Button>
           </div>
           
-          <div className="flex md:hidden items-center">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-primary focus:outline-none"
-              onClick={toggleMenu}
-            >
-              {isMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
+          <nav className="hidden md:flex space-x-10">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`text-base font-medium hover:text-primary transition-colors ${
+                  isActive(link.path) 
+                    ? 'text-primary border-b-2 border-primary' 
+                    : 'text-gray-600'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          
+          <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
+            <Button asChild size="sm" variant="outline" className="mr-2">
+              <Link to="/calculator">Track Calories</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/workout-tracker">Log Workout</Link>
+            </Button>
           </div>
         </div>
       </div>
-
+      
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 bg-white shadow-lg">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  location.pathname === item.href
-                    ? "text-primary"
-                    : "text-gray-700 hover:text-primary"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-            <div className="pt-2">
-              <Button className="w-full">Get Started</Button>
+        <div className="absolute inset-x-0 top-full origin-top-right transform p-2 transition md:hidden z-50">
+          <div className="divide-y-2 divide-gray-50 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+            <div className="px-5 pt-5 pb-6">
+              <div className="mt-6">
+                <nav className="grid gap-y-4">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={`-m-3 flex items-center rounded-md p-3 text-base font-medium ${
+                        isActive(link.path) 
+                          ? 'bg-gray-50 text-primary' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </div>
+            <div className="space-y-6 py-6 px-5">
+              <div className="grid grid-cols-2 gap-y-4 gap-x-4">
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
+                    Track Calories
+                  </Link>
+                </Button>
+                <Button asChild className="w-full">
+                  <Link to="/workout-tracker" onClick={() => setIsMenuOpen(false)}>
+                    Log Workout
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 };
 
