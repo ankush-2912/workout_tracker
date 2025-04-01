@@ -3,23 +3,14 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import FeatureCard from "@/components/FeatureCard";
 import Footer from "@/components/Footer";
 import { 
   Calculator, 
-  Dumbbell, 
   LineChart, 
-  BookOpen, 
-  ArrowRight,
   ChevronRight
 } from "lucide-react";
-import { exercises } from "@/data/exercises";
-import ExerciseCard from "@/components/ExerciseCard";
 
 const Index = () => {
-  // Get 3 featured exercises
-  const featuredExercises = exercises.slice(0, 3);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -31,50 +22,20 @@ const Index = () => {
         {/* Features Section */}
         <section className="section-container">
           <h2 className="section-title">Everything You Need For Your Fitness Journey</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <FeatureCard
-              icon={Dumbbell}
-              title="Exercise Guides"
-              description="Detailed guides on proper form and execution for all major exercises."
-            />
-            <FeatureCard
-              icon={Calculator}
-              title="Calorie Calculator"
-              description="Personalized calorie recommendations based on your goals and activity level."
-            />
-            <FeatureCard
-              icon={LineChart}
-              title="Progress Tracking"
-              description="Tools to track your workouts, measurements, and overall progress."
-            />
-            <FeatureCard
-              icon={BookOpen}
-              title="Nutrition Advice"
-              description="Expert tips on fueling your body for optimal performance and recovery."
-            />
-          </div>
-        </section>
-        
-        {/* Featured Exercises */}
-        <section className="bg-gray-50 py-12 md:py-16">
-          <div className="section-container">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold">Featured Exercises</h2>
-              <Button asChild variant="ghost" className="group">
-                <Link to="/exercises" className="flex items-center">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl p-6 card-shadow">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Calculator className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Calorie Calculator</h3>
+              <p className="text-gray-600">Personalized calorie recommendations based on your goals and activity level.</p>
             </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredExercises.map((exercise) => (
-                <ExerciseCard
-                  key={exercise.id}
-                  {...exercise}
-                />
-              ))}
+            <div className="bg-white rounded-xl p-6 card-shadow">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <LineChart className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Progress Tracking</h3>
+              <p className="text-gray-600">Tools to track your workouts, measurements, and overall progress.</p>
             </div>
           </div>
         </section>
