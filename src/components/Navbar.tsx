@@ -14,7 +14,6 @@ const Navbar = () => {
     { label: 'Home', path: '/' },
     { label: 'Workout Tracker', path: '/workout-tracker' },
     { label: 'Nutrition', path: '/calculator' },
-    { label: 'Blog', path: '/blog' },
   ];
 
   return (
