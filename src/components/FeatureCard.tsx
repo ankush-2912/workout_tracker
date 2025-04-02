@@ -9,12 +9,12 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
   return (
-    <div className="bg-white rounded-xl p-6 card-shadow">
-      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-        <Icon className="h-6 w-6 text-primary" />
+    <div className="solo-card rounded-xl p-6">
+      <div className="h-12 w-12 rounded-lg bg-violet-800/50 flex items-center justify-center mb-4 purple-glow">
+        <Icon className="h-6 w-6 text-violet-200" />
       </div>
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <h3 className="text-xl font-semibold mb-2 text-violet-200">{title}</h3>
+      <p className="text-gray-300">{description}</p>
     </div>
   );
 };
