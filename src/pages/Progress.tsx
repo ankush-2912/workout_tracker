@@ -7,12 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line,
-  ResponsiveContainer, BarChart, Bar, Cell
+  LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, ReferenceLine,
+  ResponsiveContainer, BarChart, Bar, Cell, Area, AreaChart, ComposedChart
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { ChartLine, ChartBar } from "@/components/ProgressCharts";
-import { ChevronLeft, ChevronRight, Calendar, BarChart2, LineChart as LineChartIcon, Dumbbell, Weight } from "lucide-react";
+import { ChartLine, ChartBar, formatTooltipValue, prepareCandleData } from "@/components/ProgressCharts";
+import { 
+  ChevronLeft, ChevronRight, Calendar, BarChart2, LineChart as LineChartIcon, 
+  Dumbbell, Weight, CandlestickChart 
+} from "lucide-react";
 
 const Progress = () => {
   const [workouts, setWorkouts] = useState(() => {
@@ -22,6 +25,7 @@ const Progress = () => {
   
   const [selectedExercise, setSelectedExercise] = useState("");
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
+  const [chartType, setChartType] = useState<"line" | "bar" | "candle">("line");
   
   // Create a list of all unique exercises
   const exerciseOptions = useMemo(() => {
@@ -101,6 +105,11 @@ const Progress = () => {
     // Sort by date
     return exerciseData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredWorkouts, selectedExercise]);
+
+  // Process data for candlestick chart
+  const candlestickData = useMemo(() => {
+    return prepareCandleData(exerciseProgressData);
+  }, [exerciseProgressData]);
   
   // Generate workout frequency data
   const workoutFrequencyData = useMemo(() => {
@@ -120,9 +129,29 @@ const Progress = () => {
   }, [filteredWorkouts]);
 
   // Format date for axis
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getMonth() + 1}/${date.getDate()}`;
+  };
+
+  // Custom tooltip renderer for candlestick chart
+  const renderCandlestickTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-background border rounded-md shadow-md p-3">
+          <p className="text-foreground font-medium">{new Date(data.date).toLocaleDateString()}</p>
+          <p className="text-primary">{`Max Weight: ${formatTooltipValue(data.displayWeight)} kg`}</p>
+          <div className="mt-1 pt-1 border-t border-border/50">
+            <p className="text-muted-foreground text-xs">{`Open: ${formatTooltipValue(data.open)} kg`}</p>
+            <p className="text-muted-foreground text-xs">{`High: ${formatTooltipValue(data.high)} kg`}</p>
+            <p className="text-muted-foreground text-xs">{`Low: ${formatTooltipValue(data.low)} kg`}</p>
+            <p className="text-muted-foreground text-xs">{`Close: ${formatTooltipValue(data.close)} kg`}</p>
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -203,8 +232,13 @@ const Progress = () => {
                                 if (active && payload && payload.length) {
                                   return (
                                     <div className="bg-background border rounded-md shadow-md p-2">
-                                      <p className="text-foreground font-medium">{new Date(payload[0].payload.date).toLocaleDateString()}</p>
-                                      <p className="text-primary">{`Workouts: ${payload[0].value}`}</p>
+                                      <p className="text-foreground font-medium">
+                                        {payload[0] && payload[0].payload && 
+                                         new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                      </p>
+                                      <p className="text-primary">
+                                        {`Workouts: ${payload[0] && payload[0].value}`}
+                                      </p>
                                     </div>
                                   );
                                 }
@@ -242,8 +276,13 @@ const Progress = () => {
                             if (active && payload && payload.length) {
                               return (
                                 <div className="bg-background border rounded-md shadow-md p-2">
-                                  <p className="text-foreground font-medium">{new Date(payload[0].payload.date).toLocaleDateString()}</p>
-                                  <p className="text-primary">{`Weight: ${payload[0].value.toFixed(1)} kg`}</p>
+                                  <p className="text-foreground font-medium">
+                                    {payload[0] && payload[0].payload && 
+                                     new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                  </p>
+                                  <p className="text-primary">
+                                    {`Weight: ${formatTooltipValue(payload[0] && payload[0].value)} kg`}
+                                  </p>
                                 </div>
                               );
                             }
@@ -285,82 +324,194 @@ const Progress = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {exerciseOptions.map((exercise) => (
-                          <SelectItem key={exercise} value={exercise}>
-                            {exercise}
+                          <SelectItem key={String(exercise)} value={String(exercise)}>
+                            {String(exercise)}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {selectedExercise && (
+                    <div className="mb-4 flex items-center justify-end space-x-2">
+                      <span className="text-sm text-muted-foreground mr-2">Chart Type:</span>
+                      <Button 
+                        size="sm" 
+                        variant={chartType === "line" ? "default" : "outline"} 
+                        onClick={() => setChartType("line")}
+                        className="h-8 gap-1"
+                      >
+                        <LineChartIcon className="h-4 w-4" />
+                        Line
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={chartType === "bar" ? "default" : "outline"} 
+                        onClick={() => setChartType("bar")}
+                        className="h-8 gap-1"
+                      >
+                        <BarChart2 className="h-4 w-4" />
+                        Bar
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={chartType === "candle" ? "default" : "outline"} 
+                        onClick={() => setChartType("candle")}
+                        className="h-8 gap-1"
+                      >
+                        <CandlestickChart className="h-4 w-4" />
+                        Candle
+                      </Button>
+                    </div>
+                  )}
                   
                   {selectedExercise ? (
                     exerciseProgressData.length > 0 ? (
                       <div className="space-y-8">
+                        {/* Max Weight Progress */}
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-1">
                             <LineChartIcon className="h-4 w-4" /> Max Weight Progress
                           </h4>
-                          <div className="h-[250px] w-full">
+                          <div className="h-[250px] w-full bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={exerciseProgressData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="date" tickFormatter={formatDate} />
-                                <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
-                                <Tooltip
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-background border rounded-md shadow-md p-2">
-                                          <p className="text-foreground font-medium">{new Date(payload[0].payload.date).toLocaleDateString()}</p>
-                                          <p className="text-primary">{`Max Weight: ${payload[0].value} kg`}</p>
-                                          <p className="text-muted-foreground text-xs">{`Sets: ${payload[0].payload.sets}`}</p>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  }}
-                                />
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="maxWeight" 
-                                  stroke="#6366f1" 
-                                  strokeWidth={2}
-                                  dot={{ r: 4 }}
-                                  activeDot={{ r: 6 }}
-                                />
-                              </LineChart>
+                              {chartType === "line" ? (
+                                <LineChart data={exerciseProgressData}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                                  <XAxis dataKey="date" tickFormatter={formatDate} />
+                                  <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-background border rounded-md shadow-md p-2">
+                                            <p className="text-foreground font-medium">
+                                              {payload[0] && payload[0].payload && 
+                                               new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-primary">
+                                              {`Max Weight: ${formatTooltipValue(payload[0] && payload[0].value)} kg`}
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">
+                                              {`Sets: ${payload[0] && payload[0].payload && payload[0].payload.sets}`}
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="maxWeight" 
+                                    stroke="#6366f1" 
+                                    strokeWidth={2}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                  />
+                                </LineChart>
+                              ) : chartType === "bar" ? (
+                                <BarChart data={exerciseProgressData}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                                  <XAxis dataKey="date" tickFormatter={formatDate} />
+                                  <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-background border rounded-md shadow-md p-2">
+                                            <p className="text-foreground font-medium">
+                                              {payload[0] && payload[0].payload && 
+                                               new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-primary">
+                                              {`Max Weight: ${formatTooltipValue(payload[0] && payload[0].value)} kg`}
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                  <Bar dataKey="maxWeight" fill="#6366f1" />
+                                </BarChart>
+                              ) : (
+                                <ComposedChart data={candlestickData}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                                  <XAxis dataKey="date" tickFormatter={formatDate} />
+                                  <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
+                                  <Tooltip content={renderCandlestickTooltip} />
+                                  {/* Render the "candles" */}
+                                  {candlestickData.map((entry, index) => {
+                                    const isIncreasing = entry.close > entry.open;
+                                    const color = isIncreasing ? "#22c55e" : "#ea384c";
+                                    const baseY = Math.min(entry.open, entry.close);
+                                    const height = Math.abs(entry.close - entry.open);
+                                    // Line represents the high/low range
+                                    return (
+                                      <g key={`candle-${index}`}>
+                                        {/* Vertical line (high to low) */}
+                                        <line
+                                          x1={index + 0.5}
+                                          y1={entry.high}
+                                          x2={index + 0.5}
+                                          y2={entry.low}
+                                          stroke={color}
+                                          strokeWidth={1}
+                                        />
+                                        {/* Candle body */}
+                                        <rect
+                                          x={index + 0.3}
+                                          y={baseY}
+                                          width={0.4}
+                                          height={height}
+                                          fill={color}
+                                        />
+                                      </g>
+                                    );
+                                  })}
+                                </ComposedChart>
+                              )}
                             </ResponsiveContainer>
                           </div>
                         </div>
                         
-                        <div>
-                          <h4 className="font-medium mb-2 flex items-center gap-1">
-                            <BarChart2 className="h-4 w-4" /> Total Volume (Weight × Reps)
-                          </h4>
-                          <div className="h-[250px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={exerciseProgressData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="date" tickFormatter={formatDate} />
-                                <YAxis />
-                                <Tooltip
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-background border rounded-md shadow-md p-2">
-                                          <p className="text-foreground font-medium">{new Date(payload[0].payload.date).toLocaleDateString()}</p>
-                                          <p className="text-primary">{`Total Volume: ${payload[0].value} kg`}</p>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  }}
-                                />
-                                <Bar dataKey="totalVolume" fill="#6366f1" />
-                              </BarChart>
-                            </ResponsiveContainer>
+                        {/* Total Volume chart - only shown for line and bar modes */}
+                        {chartType !== "candle" && (
+                          <div>
+                            <h4 className="font-medium mb-2 flex items-center gap-1">
+                              <BarChart2 className="h-4 w-4" /> Total Volume (Weight × Reps)
+                            </h4>
+                            <div className="h-[250px] w-full">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={exerciseProgressData}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="date" tickFormatter={formatDate} />
+                                  <YAxis />
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-background border rounded-md shadow-md p-2">
+                                            <p className="text-foreground font-medium">
+                                              {payload[0] && payload[0].payload && 
+                                               new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-primary">
+                                              {`Total Volume: ${formatTooltipValue(payload[0] && payload[0].value)} kg`}
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                  <Bar dataKey="totalVolume" fill="#6366f1" />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center py-12 text-muted-foreground">
