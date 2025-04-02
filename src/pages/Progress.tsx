@@ -1,11 +1,12 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { 
   LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, ReferenceLine,
   ResponsiveContainer, BarChart, Bar, Cell, Area, AreaChart, ComposedChart
@@ -14,15 +15,104 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { ChartLine, ChartBar, formatTooltipValue, prepareCandleData } from "@/components/ProgressCharts";
 import { 
   ChevronLeft, ChevronRight, Calendar, BarChart2, LineChart as LineChartIcon, 
-  Dumbbell, Weight, CandlestickChart 
+  Dumbbell, Weight, CandlestickChart, Activity, TrendingUp, Zap
 } from "lucide-react";
+
+// Function to generate random workout data
+const generateRandomWorkouts = (count = 30) => {
+  const workouts = [];
+  const exercises = ["Bench Press", "Squat", "Deadlift", "Overhead Press", "Pull-ups", "Bicep Curls"];
+  const now = new Date();
+  
+  for (let i = 0; i < count; i++) {
+    const date = new Date();
+    date.setDate(now.getDate() - (count - i));
+    
+    const exerciseList = [];
+    const exerciseCount = Math.floor(Math.random() * 3) + 2; // 2-4 exercises per workout
+    
+    const selectedExercises = [...exercises].sort(() => Math.random() - 0.5).slice(0, exerciseCount);
+    
+    selectedExercises.forEach(exerciseName => {
+      const sets = [];
+      const setCount = Math.floor(Math.random() * 3) + 3; // 3-5 sets
+      
+      for (let s = 0; s < setCount; s++) {
+        const baseWeight = exerciseName === "Bench Press" ? 100 : 
+                          exerciseName === "Squat" ? 150 : 
+                          exerciseName === "Deadlift" ? 200 : 
+                          exerciseName === "Overhead Press" ? 80 : 
+                          exerciseName === "Pull-ups" ? 20 : 60;
+        
+        // Add some progression over time
+        const progressFactor = i / count; // 0 to almost 1
+        const randomVariation = (Math.random() * 10) - 5; // -5 to +5
+        const weight = Math.round(baseWeight * (1 + (progressFactor * 0.2)) + randomVariation);
+        
+        sets.push({
+          weight: String(weight),
+          reps: String(Math.floor(Math.random() * 5) + 6) // 6-10 reps
+        });
+      }
+      
+      exerciseList.push({
+        name: exerciseName,
+        sets: sets
+      });
+    });
+    
+    workouts.push({
+      date: date.toISOString().split('T')[0],
+      exercises: exerciseList
+    });
+  }
+  
+  return workouts;
+};
+
+// Generate random body metrics
+const generateRandomBodyMetrics = (workouts) => {
+  if (!workouts || !workouts.length) return [];
+  
+  // Sort workouts by date
+  const sortedWorkouts = [...workouts].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  // Generate body weight data with a slight downward trend
+  const startWeight = 85; // starting weight in kg
+  const targetWeight = 80; // target weight in kg
+  
+  return sortedWorkouts.map((workout, index) => {
+    const progress = index / (sortedWorkouts.length - 1); // 0 to 1
+    const trendWeight = startWeight - (progress * (startWeight - targetWeight));
+    const randomVariation = (Math.random() * 1.5) - 0.75; // -0.75 to +0.75 kg daily fluctuation
+    
+    return {
+      date: workout.date,
+      weight: parseFloat((trendWeight + randomVariation).toFixed(1)),
+      bodyFat: parseFloat((20 - (progress * 3) + (Math.random() * 1) - 0.5).toFixed(1)),
+      muscleMass: parseFloat((45 + (progress * 2) + (Math.random() * 0.8) - 0.4).toFixed(1))
+    };
+  });
+};
 
 const Progress = () => {
   const [workouts, setWorkouts] = useState(() => {
     const saved = localStorage.getItem("workouts");
-    return saved ? JSON.parse(saved) : [];
+    // Only use saved workouts if they exist, otherwise generate random data
+    const parsedSaved = saved ? JSON.parse(saved) : [];
+    return parsedSaved.length > 0 ? parsedSaved : generateRandomWorkouts(30);
   });
   
+  // Store random workouts in localStorage if none exist
+  useEffect(() => {
+    if (!localStorage.getItem("workouts") || JSON.parse(localStorage.getItem("workouts") || "[]").length === 0) {
+      localStorage.setItem("workouts", JSON.stringify(workouts));
+    }
+  }, [workouts]);
+  
+  const [bodyMetrics, setBodyMetrics] = useState(() => generateRandomBodyMetrics(workouts));
   const [selectedExercise, setSelectedExercise] = useState("");
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
   const [chartType, setChartType] = useState<"line" | "bar" | "candle">("line");
@@ -56,15 +146,21 @@ const Progress = () => {
     return workouts.filter(workout => new Date(workout.date) >= cutoffDate);
   }, [workouts, timeRange]);
 
-  // Generate data for body weight chart (assuming you might add this feature later)
-  const bodyWeightData = useMemo(() => {
-    // For now, we'll generate mock data - this would be replaced with real body weight data
-    // In a real implementation, this would come from a separate bodyWeight state/storage
-    return workouts.map((workout, index) => ({
-      date: workout.date,
-      weight: 70 + Math.random() * 5 // Just placeholder mock data
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [workouts]);
+  // Filter body metrics data based on time range
+  const filteredBodyMetrics = useMemo(() => {
+    if (timeRange === "all") return bodyMetrics;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    if (timeRange === "month") {
+      cutoffDate.setMonth(now.getMonth() - 1);
+    } else if (timeRange === "week") {
+      cutoffDate.setDate(now.getDate() - 7);
+    }
+    
+    return bodyMetrics.filter(metric => new Date(metric.date) >= cutoffDate);
+  }, [bodyMetrics, timeRange]);
   
   // Generate data for the selected exercise
   const exerciseProgressData = useMemo(() => {
@@ -128,6 +224,59 @@ const Progress = () => {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredWorkouts]);
 
+  // Calculate progress metrics
+  const progressMetrics = useMemo(() => {
+    // Calculate average workouts per week
+    const weekCount = Math.ceil(workouts.length / 7);
+    const workoutsPerWeek = weekCount > 0 ? (workouts.length / weekCount) : 0;
+    
+    // Calculate workout streak
+    let currentStreak = 0;
+    let bestStreak = 0;
+    
+    const dateSet = new Set(workouts.map(w => w.date));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < 100; i++) { // Check the last 100 days
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      const dateString = checkDate.toISOString().split('T')[0];
+      
+      if (dateSet.has(dateString)) {
+        currentStreak = i === 0 ? currentStreak + 1 : currentStreak;
+        bestStreak = Math.max(bestStreak, currentStreak);
+      } else if (i === 0) {
+        // Today doesn't have a workout
+        break;
+      } else {
+        // Streak broken
+        break;
+      }
+    }
+    
+    // Body metrics progress
+    let weightChange = 0;
+    let bodyFatChange = 0;
+    
+    if (bodyMetrics.length >= 2) {
+      const latest = bodyMetrics[bodyMetrics.length - 1];
+      const oldest = bodyMetrics[0];
+      
+      weightChange = latest.weight - oldest.weight;
+      bodyFatChange = latest.bodyFat - oldest.bodyFat;
+    }
+    
+    return {
+      workoutsPerWeek,
+      currentStreak,
+      bestStreak,
+      weightChange,
+      bodyFatChange,
+      totalWorkouts: workouts.length
+    };
+  }, [workouts, bodyMetrics]);
+
   // Format date for axis
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -172,6 +321,65 @@ const Progress = () => {
         </div>
         
         <div className="section-container py-8">
+          {/* Progress Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-violet-400" />
+                  Current Streak
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center">
+                  <div className="text-4xl font-bold text-violet-300 mb-2">{progressMetrics.currentStreak}</div>
+                  <Progress value={progressMetrics.currentStreak / (progressMetrics.bestStreak || 1) * 100} className="h-2 bg-slate-700" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Best: {progressMetrics.bestStreak} days
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-violet-400" />
+                  Weekly Consistency
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center">
+                  <div className="text-4xl font-bold text-violet-300 mb-2">
+                    {progressMetrics.workoutsPerWeek.toFixed(1)}
+                  </div>
+                  <Progress value={progressMetrics.workoutsPerWeek / 7 * 100} className="h-2 bg-slate-700" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Workouts per week
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-violet-400" />
+                  Total Workouts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center">
+                  <div className="text-4xl font-bold text-violet-300 mb-2">{progressMetrics.totalWorkouts}</div>
+                  <Progress value={Math.min(progressMetrics.totalWorkouts / 100 * 100, 100)} className="h-2 bg-slate-700" />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Goal: 100 workouts
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="overview" className="text-lg py-3">Overview</TabsTrigger>
@@ -209,10 +417,10 @@ const Progress = () => {
                 </Card>
               ) : (
                 <>
-                  <Card className="border-2 border-muted shadow-lg">
+                  <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-primary" />
+                        <Calendar className="h-5 w-5 text-violet-400" />
                         Workout Frequency
                       </CardTitle>
                       <CardDescription>How consistently you've been training</CardDescription>
@@ -245,7 +453,7 @@ const Progress = () => {
                                 return null;
                               }}
                             />
-                            <Bar dataKey="count" fill="#6366f1" />
+                            <Bar dataKey="count" fill="#9b87f5" />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -256,10 +464,10 @@ const Progress = () => {
             </TabsContent>
             
             <TabsContent value="body" className="space-y-6">
-              <Card className="border-2 border-muted shadow-lg">
+              <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Weight className="h-5 w-5 text-primary" />
+                    <Weight className="h-5 w-5 text-violet-400" />
                     Body Weight Trend
                   </CardTitle>
                   <CardDescription>Track your weight changes over time</CardDescription>
@@ -267,7 +475,7 @@ const Progress = () => {
                 <CardContent>
                   <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={bodyWeightData}>
+                      <LineChart data={filteredBodyMetrics}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="date" tickFormatter={formatDate} />
                         <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
@@ -292,7 +500,7 @@ const Progress = () => {
                         <Line 
                           type="monotone" 
                           dataKey="weight" 
-                          stroke="#6366f1" 
+                          stroke="#9b87f5" 
                           strokeWidth={2}
                           dot={{ r: 4 }}
                           activeDot={{ r: 6 }}
@@ -300,18 +508,66 @@ const Progress = () => {
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="mt-4 text-center text-sm text-muted-foreground">
-                    Note: This is currently showing sample data. Add your weight tracking to see actual results.
+                  
+                  <div className="mt-8">
+                    <h4 className="font-medium mb-2 flex items-center gap-1">
+                      <LineChartIcon className="h-4 w-4 text-violet-400" /> Body Composition
+                    </h4>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={filteredBodyMetrics}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" tickFormatter={formatDate} />
+                          <YAxis />
+                          <Tooltip 
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-background border rounded-md shadow-md p-2">
+                                    <p className="text-foreground font-medium">
+                                      {payload[0] && payload[0].payload && 
+                                       new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                    </p>
+                                    {payload.map((entry, index) => (
+                                      <p key={index} style={{ color: entry.color }}>
+                                        {`${entry.name}: ${formatTooltipValue(entry.value)}%`}
+                                      </p>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="bodyFat" 
+                            name="Body Fat"
+                            stackId="1" 
+                            stroke="#D946EF" 
+                            fill="#D946EF80" 
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="muscleMass" 
+                            name="Muscle Mass"
+                            stackId="2" 
+                            stroke="#8B5CF6" 
+                            fill="#8B5CF680" 
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
             
             <TabsContent value="exercises" className="space-y-6">
-              <Card className="border-2 border-muted shadow-lg">
+              <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Dumbbell className="h-5 w-5 text-primary" />
+                    <Dumbbell className="h-5 w-5 text-violet-400" />
                     Exercise Progress
                   </CardTitle>
                   <CardDescription>Track your strength gains for specific exercises</CardDescription>
@@ -371,9 +627,9 @@ const Progress = () => {
                         {/* Max Weight Progress */}
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-1">
-                            <LineChartIcon className="h-4 w-4" /> Max Weight Progress
+                            <LineChartIcon className="h-4 w-4 text-violet-400" /> Max Weight Progress
                           </h4>
-                          <div className="h-[250px] w-full bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <div className="h-[250px] w-full bg-slate-900 rounded-lg">
                             <ResponsiveContainer width="100%" height="100%">
                               {chartType === "line" ? (
                                 <LineChart data={exerciseProgressData}>
@@ -404,7 +660,7 @@ const Progress = () => {
                                   <Line 
                                     type="monotone" 
                                     dataKey="maxWeight" 
-                                    stroke="#6366f1" 
+                                    stroke="#9b87f5" 
                                     strokeWidth={2}
                                     dot={{ r: 4 }}
                                     activeDot={{ r: 6 }}
@@ -433,7 +689,7 @@ const Progress = () => {
                                       return null;
                                     }}
                                   />
-                                  <Bar dataKey="maxWeight" fill="#6366f1" />
+                                  <Bar dataKey="maxWeight" fill="#9b87f5" />
                                 </BarChart>
                               ) : (
                                 <ComposedChart data={candlestickData}>
@@ -480,7 +736,7 @@ const Progress = () => {
                         {chartType !== "candle" && (
                           <div>
                             <h4 className="font-medium mb-2 flex items-center gap-1">
-                              <BarChart2 className="h-4 w-4" /> Total Volume (Weight × Reps)
+                              <BarChart2 className="h-4 w-4 text-violet-400" /> Total Volume (Weight × Reps)
                             </h4>
                             <div className="h-[250px] w-full">
                               <ResponsiveContainer width="100%" height="100%">
@@ -506,7 +762,7 @@ const Progress = () => {
                                       return null;
                                     }}
                                   />
-                                  <Bar dataKey="totalVolume" fill="#6366f1" />
+                                  <Bar dataKey="totalVolume" fill="#9b87f5" />
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
