@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -18,7 +17,6 @@ import {
   Dumbbell, Weight, CandlestickChart, Activity, TrendingUp, Zap
 } from "lucide-react";
 
-// Function to generate random workout data
 const generateRandomWorkouts = (count = 30) => {
   const workouts = [];
   const exercises = ["Bench Press", "Squat", "Deadlift", "Overhead Press", "Pull-ups", "Bicep Curls"];
@@ -44,7 +42,6 @@ const generateRandomWorkouts = (count = 30) => {
                           exerciseName === "Overhead Press" ? 80 : 
                           exerciseName === "Pull-ups" ? 20 : 60;
         
-        // Add some progression over time
         const progressFactor = i / count; // 0 to almost 1
         const randomVariation = (Math.random() * 10) - 5; // -5 to +5
         const weight = Math.round(baseWeight * (1 + (progressFactor * 0.2)) + randomVariation);
@@ -70,16 +67,13 @@ const generateRandomWorkouts = (count = 30) => {
   return workouts;
 };
 
-// Generate random body metrics
 const generateRandomBodyMetrics = (workouts) => {
   if (!workouts || !workouts.length) return [];
   
-  // Sort workouts by date
   const sortedWorkouts = [...workouts].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
   
-  // Generate body weight data with a slight downward trend
   const startWeight = 85; // starting weight in kg
   const targetWeight = 80; // target weight in kg
   
@@ -97,15 +91,13 @@ const generateRandomBodyMetrics = (workouts) => {
   });
 };
 
-const Progress = () => {
+const ProgressPage = () => {
   const [workouts, setWorkouts] = useState(() => {
     const saved = localStorage.getItem("workouts");
-    // Only use saved workouts if they exist, otherwise generate random data
     const parsedSaved = saved ? JSON.parse(saved) : [];
     return parsedSaved.length > 0 ? parsedSaved : generateRandomWorkouts(30);
   });
   
-  // Store random workouts in localStorage if none exist
   useEffect(() => {
     if (!localStorage.getItem("workouts") || JSON.parse(localStorage.getItem("workouts") || "[]").length === 0) {
       localStorage.setItem("workouts", JSON.stringify(workouts));
@@ -116,8 +108,8 @@ const Progress = () => {
   const [selectedExercise, setSelectedExercise] = useState("");
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
   const [chartType, setChartType] = useState<"line" | "bar" | "candle">("line");
+  const [volumeChartType, setVolumeChartType] = useState<"line" | "bar">("bar");
   
-  // Create a list of all unique exercises
   const exerciseOptions = useMemo(() => {
     const exerciseSet = new Set();
     workouts.forEach(workout => {
@@ -130,7 +122,6 @@ const Progress = () => {
     return Array.from(exerciseSet).sort();
   }, [workouts]);
   
-  // Filter workouts based on time range
   const filteredWorkouts = useMemo(() => {
     if (timeRange === "all") return workouts;
     
@@ -145,8 +136,7 @@ const Progress = () => {
     
     return workouts.filter(workout => new Date(workout.date) >= cutoffDate);
   }, [workouts, timeRange]);
-
-  // Filter body metrics data based on time range
+  
   const filteredBodyMetrics = useMemo(() => {
     if (timeRange === "all") return bodyMetrics;
     
@@ -162,7 +152,6 @@ const Progress = () => {
     return bodyMetrics.filter(metric => new Date(metric.date) >= cutoffDate);
   }, [bodyMetrics, timeRange]);
   
-  // Generate data for the selected exercise
   const exerciseProgressData = useMemo(() => {
     if (!selectedExercise) return [];
     
@@ -171,7 +160,6 @@ const Progress = () => {
     filteredWorkouts.forEach(workout => {
       workout.exercises.forEach(exercise => {
         if (exercise.name.toLowerCase() === selectedExercise.toLowerCase()) {
-          // Find the highest weight for this exercise in this workout
           let maxWeight = 0;
           let totalVolume = 0;
           
@@ -198,39 +186,31 @@ const Progress = () => {
       });
     });
     
-    // Sort by date
     return exerciseData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredWorkouts, selectedExercise]);
-
-  // Process data for candlestick chart
+  
   const candlestickData = useMemo(() => {
     return prepareCandleData(exerciseProgressData);
   }, [exerciseProgressData]);
   
-  // Generate workout frequency data
   const workoutFrequencyData = useMemo(() => {
     if (!filteredWorkouts.length) return [];
     
-    // Create a map of dates to workout counts
     const dateMap = {};
     filteredWorkouts.forEach(workout => {
       const date = workout.date;
       dateMap[date] = (dateMap[date] || 0) + 1;
     });
     
-    // Convert to array and sort by date
     return Object.entries(dateMap)
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredWorkouts]);
-
-  // Calculate progress metrics
+  
   const progressMetrics = useMemo(() => {
-    // Calculate average workouts per week
     const weekCount = Math.ceil(workouts.length / 7);
     const workoutsPerWeek = weekCount > 0 ? (workouts.length / weekCount) : 0;
     
-    // Calculate workout streak
     let currentStreak = 0;
     let bestStreak = 0;
     
@@ -238,7 +218,7 @@ const Progress = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    for (let i = 0; i < 100; i++) { // Check the last 100 days
+    for (let i = 0; i < 100; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
       const dateString = checkDate.toISOString().split('T')[0];
@@ -247,15 +227,12 @@ const Progress = () => {
         currentStreak = i === 0 ? currentStreak + 1 : currentStreak;
         bestStreak = Math.max(bestStreak, currentStreak);
       } else if (i === 0) {
-        // Today doesn't have a workout
         break;
       } else {
-        // Streak broken
         break;
       }
     }
     
-    // Body metrics progress
     let weightChange = 0;
     let bodyFatChange = 0;
     
@@ -276,14 +253,12 @@ const Progress = () => {
       totalWorkouts: workouts.length
     };
   }, [workouts, bodyMetrics]);
-
-  // Format date for axis
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getMonth() + 1}/${date.getDate()}`;
   };
-
-  // Custom tooltip renderer for candlestick chart
+  
   const renderCandlestickTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -302,13 +277,12 @@ const Progress = () => {
     }
     return null;
   };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
           <div className="section-container py-12 md:py-16">
             <div className="max-w-3xl mx-auto text-center">
@@ -321,7 +295,6 @@ const Progress = () => {
         </div>
         
         <div className="section-container py-8">
-          {/* Progress Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
               <CardHeader className="pb-2">
@@ -624,7 +597,6 @@ const Progress = () => {
                   {selectedExercise ? (
                     exerciseProgressData.length > 0 ? (
                       <div className="space-y-8">
-                        {/* Max Weight Progress */}
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-1">
                             <LineChartIcon className="h-4 w-4 text-violet-400" /> Max Weight Progress
@@ -697,16 +669,13 @@ const Progress = () => {
                                   <XAxis dataKey="date" tickFormatter={formatDate} />
                                   <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
                                   <Tooltip content={renderCandlestickTooltip} />
-                                  {/* Render the "candles" */}
                                   {candlestickData.map((entry, index) => {
                                     const isIncreasing = entry.close > entry.open;
                                     const color = isIncreasing ? "#22c55e" : "#ea384c";
                                     const baseY = Math.min(entry.open, entry.close);
                                     const height = Math.abs(entry.close - entry.open);
-                                    // Line represents the high/low range
                                     return (
                                       <g key={`candle-${index}`}>
-                                        {/* Vertical line (high to low) */}
                                         <line
                                           x1={index + 0.5}
                                           y1={entry.high}
@@ -715,7 +684,6 @@ const Progress = () => {
                                           stroke={color}
                                           strokeWidth={1}
                                         />
-                                        {/* Candle body */}
                                         <rect
                                           x={index + 0.3}
                                           y={baseY}
@@ -732,14 +700,36 @@ const Progress = () => {
                           </div>
                         </div>
                         
-                        {/* Total Volume chart - only shown for line and bar modes */}
-                        {chartType !== "candle" && (
-                          <div>
-                            <h4 className="font-medium mb-2 flex items-center gap-1">
-                              <BarChart2 className="h-4 w-4 text-violet-400" /> Total Volume (Weight × Reps)
-                            </h4>
-                            <div className="h-[250px] w-full">
-                              <ResponsiveContainer width="100%" height="100%">
+                        <div>
+                          <h4 className="font-medium mb-2 flex items-center gap-1 justify-between">
+                            <div className="flex items-center gap-1">
+                              <BarChart2 className="h-4 w-4 text-violet-400" /> 
+                              Total Volume (Weight × Reps)
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm"
+                                variant={volumeChartType === "bar" ? "default" : "outline"}
+                                onClick={() => setVolumeChartType("bar")}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <BarChart2 className="h-3 w-3 mr-1" />
+                                Bar
+                              </Button>
+                              <Button 
+                                size="sm"
+                                variant={volumeChartType === "line" ? "default" : "outline"}
+                                onClick={() => setVolumeChartType("line")}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <LineChartIcon className="h-3 w-3 mr-1" />
+                                Line
+                              </Button>
+                            </div>
+                          </h4>
+                          <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              {volumeChartType === "bar" ? (
                                 <BarChart data={exerciseProgressData}>
                                   <CartesianGrid strokeDasharray="3 3" />
                                   <XAxis dataKey="date" tickFormatter={formatDate} />
@@ -764,10 +754,42 @@ const Progress = () => {
                                   />
                                   <Bar dataKey="totalVolume" fill="#9b87f5" />
                                 </BarChart>
-                              </ResponsiveContainer>
-                            </div>
+                              ) : (
+                                <LineChart data={exerciseProgressData}>
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="date" tickFormatter={formatDate} />
+                                  <YAxis />
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-background border rounded-md shadow-md p-2">
+                                            <p className="text-foreground font-medium">
+                                              {payload[0] && payload[0].payload && 
+                                               new Date(payload[0].payload.date as string).toLocaleDateString()}
+                                            </p>
+                                            <p className="text-primary">
+                                              {`Total Volume: ${formatTooltipValue(payload[0] && payload[0].value)} kg`}
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="totalVolume" 
+                                    stroke="#9b87f5" 
+                                    strokeWidth={2}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                  />
+                                </LineChart>
+                              )}
+                            </ResponsiveContainer>
                           </div>
-                        )}
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-12 text-muted-foreground">
@@ -791,4 +813,4 @@ const Progress = () => {
   );
 };
 
-export default Progress;
+export default ProgressPage;
