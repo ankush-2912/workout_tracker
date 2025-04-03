@@ -11,10 +11,10 @@ import {
   ResponsiveContainer, BarChart, Bar, Cell, Area, AreaChart, ComposedChart
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { ChartLine, ChartBar, formatTooltipValue, prepareCandleData } from "@/components/ProgressCharts";
+import { ChartLine, ChartBar, formatTooltipValue } from "@/components/ProgressCharts";
 import { 
   ChevronLeft, ChevronRight, Calendar, BarChart2, LineChart as LineChartIcon, 
-  Dumbbell, Weight, CandlestickChart, Activity, TrendingUp, Zap
+  Dumbbell, Weight, Activity, TrendingUp, Zap
 } from "lucide-react";
 
 const generateRandomWorkouts = (count = 30) => {
@@ -107,7 +107,7 @@ const ProgressPage = () => {
   const [bodyMetrics, setBodyMetrics] = useState(() => generateRandomBodyMetrics(workouts));
   const [selectedExercise, setSelectedExercise] = useState("");
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
-  const [chartType, setChartType] = useState<"line" | "bar" | "candle">("line");
+  const [chartType, setChartType] = useState<"line" | "bar">("line");
   const [volumeChartType, setVolumeChartType] = useState<"line" | "bar">("bar");
   
   const exerciseOptions = useMemo(() => {
@@ -189,93 +189,9 @@ const ProgressPage = () => {
     return exerciseData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredWorkouts, selectedExercise]);
   
-  const candlestickData = useMemo(() => {
-    return prepareCandleData(exerciseProgressData);
-  }, [exerciseProgressData]);
-  
-  const workoutFrequencyData = useMemo(() => {
-    if (!filteredWorkouts.length) return [];
-    
-    const dateMap = {};
-    filteredWorkouts.forEach(workout => {
-      const date = workout.date;
-      dateMap[date] = (dateMap[date] || 0) + 1;
-    });
-    
-    return Object.entries(dateMap)
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [filteredWorkouts]);
-  
-  const progressMetrics = useMemo(() => {
-    const weekCount = Math.ceil(workouts.length / 7);
-    const workoutsPerWeek = weekCount > 0 ? (workouts.length / weekCount) : 0;
-    
-    let currentStreak = 0;
-    let bestStreak = 0;
-    
-    const dateSet = new Set(workouts.map(w => w.date));
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    for (let i = 0; i < 100; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const dateString = checkDate.toISOString().split('T')[0];
-      
-      if (dateSet.has(dateString)) {
-        currentStreak = i === 0 ? currentStreak + 1 : currentStreak;
-        bestStreak = Math.max(bestStreak, currentStreak);
-      } else if (i === 0) {
-        break;
-      } else {
-        break;
-      }
-    }
-    
-    let weightChange = 0;
-    let bodyFatChange = 0;
-    
-    if (bodyMetrics.length >= 2) {
-      const latest = bodyMetrics[bodyMetrics.length - 1];
-      const oldest = bodyMetrics[0];
-      
-      weightChange = latest.weight - oldest.weight;
-      bodyFatChange = latest.bodyFat - oldest.bodyFat;
-    }
-    
-    return {
-      workoutsPerWeek,
-      currentStreak,
-      bestStreak,
-      weightChange,
-      bodyFatChange,
-      totalWorkouts: workouts.length
-    };
-  }, [workouts, bodyMetrics]);
-  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getMonth() + 1}/${date.getDate()}`;
-  };
-  
-  const renderCandlestickTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background border rounded-md shadow-md p-3">
-          <p className="text-foreground font-medium">{new Date(data.date).toLocaleDateString()}</p>
-          <p className="text-primary">{`Max Weight: ${formatTooltipValue(data.displayWeight)} kg`}</p>
-          <div className="mt-1 pt-1 border-t border-border/50">
-            <p className="text-muted-foreground text-xs">{`Open: ${formatTooltipValue(data.open)} kg`}</p>
-            <p className="text-muted-foreground text-xs">{`High: ${formatTooltipValue(data.high)} kg`}</p>
-            <p className="text-muted-foreground text-xs">{`Low: ${formatTooltipValue(data.low)} kg`}</p>
-            <p className="text-muted-foreground text-xs">{`Close: ${formatTooltipValue(data.close)} kg`}</p>
-          </div>
-        </div>
-      );
-    }
-    return null;
   };
   
   return (
@@ -582,15 +498,6 @@ const ProgressPage = () => {
                         <BarChart2 className="h-4 w-4" />
                         Bar
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant={chartType === "candle" ? "default" : "outline"} 
-                        onClick={() => setChartType("candle")}
-                        className="h-8 gap-1"
-                      >
-                        <CandlestickChart className="h-4 w-4" />
-                        Candle
-                      </Button>
                     </div>
                   )}
                   
@@ -638,7 +545,7 @@ const ProgressPage = () => {
                                     activeDot={{ r: 6 }}
                                   />
                                 </LineChart>
-                              ) : chartType === "bar" ? (
+                              ) : (
                                 <BarChart data={exerciseProgressData}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                                   <XAxis dataKey="date" tickFormatter={formatDate} />
@@ -663,38 +570,6 @@ const ProgressPage = () => {
                                   />
                                   <Bar dataKey="maxWeight" fill="#9b87f5" />
                                 </BarChart>
-                              ) : (
-                                <ComposedChart data={candlestickData}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                                  <XAxis dataKey="date" tickFormatter={formatDate} />
-                                  <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
-                                  <Tooltip content={renderCandlestickTooltip} />
-                                  {candlestickData.map((entry, index) => {
-                                    const isIncreasing = entry.close > entry.open;
-                                    const color = isIncreasing ? "#22c55e" : "#ea384c";
-                                    const baseY = Math.min(entry.open, entry.close);
-                                    const height = Math.abs(entry.close - entry.open);
-                                    return (
-                                      <g key={`candle-${index}`}>
-                                        <line
-                                          x1={index + 0.5}
-                                          y1={entry.high}
-                                          x2={index + 0.5}
-                                          y2={entry.low}
-                                          stroke={color}
-                                          strokeWidth={1}
-                                        />
-                                        <rect
-                                          x={index + 0.3}
-                                          y={baseY}
-                                          width={0.4}
-                                          height={height}
-                                          fill={color}
-                                        />
-                                      </g>
-                                    );
-                                  })}
-                                </ComposedChart>
                               )}
                             </ResponsiveContainer>
                           </div>

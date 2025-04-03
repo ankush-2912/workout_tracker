@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,7 +11,7 @@ import { Plus, Save, Trash2, Calendar, Dumbbell, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import WorkoutHistory from "@/components/WorkoutHistory";
 
-const LOCAL_STORAGE_KEY = "workout_tracker_data";
+const LOCAL_STORAGE_KEY = "workouts";
 
 const WorkoutTracker = () => {
   const { toast } = useToast();
@@ -29,6 +30,8 @@ const WorkoutTracker = () => {
     date: new Date().toISOString().split("T")[0],
     exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
   });
+  
+  const [activeTab, setActiveTab] = useState("record");
 
   useEffect(() => {
     try {
@@ -145,7 +148,6 @@ const WorkoutTracker = () => {
   const deleteWorkout = (id: string) => {
     const updatedWorkouts = workouts.filter(workout => workout.id !== id);
     setWorkouts(updatedWorkouts);
-    localStorage.setItem("workouts", JSON.stringify(updatedWorkouts));
     
     toast({
       title: "Workout deleted",
@@ -155,6 +157,7 @@ const WorkoutTracker = () => {
 
   const editWorkout = (workout: any) => {
     setCurrentWorkout(workout);
+    setActiveTab("record");
   };
 
   return (
@@ -174,7 +177,7 @@ const WorkoutTracker = () => {
         </div>
         
         <div className="section-container py-8">
-          <Tabs defaultValue="record" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="record" className="text-lg py-3">Record Workout</TabsTrigger>
               <TabsTrigger value="history" className="text-lg py-3">Workout History</TabsTrigger>
@@ -185,7 +188,7 @@ const WorkoutTracker = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-primary" />
-                    New Workout
+                    {currentWorkout.id ? "Edit Workout" : "New Workout"}
                   </CardTitle>
                   <CardDescription>Record your exercises, sets, reps, and weights</CardDescription>
                 </CardHeader>
@@ -290,7 +293,7 @@ const WorkoutTracker = () => {
                     <Plus className="mr-2 h-4 w-4" /> Add Exercise
                   </Button>
                   <Button onClick={saveWorkout} className="w-full sm:w-auto">
-                    <Save className="mr-2 h-4 w-4" /> Save Workout
+                    <Save className="mr-2 h-4 w-4" /> {currentWorkout.id ? "Update Workout" : "Save Workout"}
                   </Button>
                 </CardFooter>
               </Card>
