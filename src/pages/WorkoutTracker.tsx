@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,18 @@ import { Plus, Save, Trash2, Calendar, Dumbbell, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import WorkoutHistory from "@/components/WorkoutHistory";
 
+const LOCAL_STORAGE_KEY = "workout_tracker_data";
+
 const WorkoutTracker = () => {
   const { toast } = useToast();
   const [workouts, setWorkouts] = useState(() => {
-    const saved = localStorage.getItem("workouts");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error("Error loading workouts from localStorage:", error);
+      return [];
+    }
   });
   
   const [currentWorkout, setCurrentWorkout] = useState({
@@ -23,6 +29,19 @@ const WorkoutTracker = () => {
     date: new Date().toISOString().split("T")[0],
     exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(workouts));
+    } catch (error) {
+      console.error("Error saving workouts to localStorage:", error);
+      toast({
+        title: "Storage Error",
+        description: "There was an error saving your workout data",
+        variant: "destructive",
+      });
+    }
+  }, [workouts, toast]);
 
   const saveWorkout = () => {
     if (!currentWorkout.exercises[0].name) {
@@ -37,6 +56,7 @@ const WorkoutTracker = () => {
     const workoutToSave = {
       ...currentWorkout,
       id: currentWorkout.id || Date.now().toString(),
+      savedAt: new Date().toISOString(),
     };
     
     const updatedWorkouts = currentWorkout.id 
@@ -44,7 +64,6 @@ const WorkoutTracker = () => {
       : [...workouts, workoutToSave];
     
     setWorkouts(updatedWorkouts);
-    localStorage.setItem("workouts", JSON.stringify(updatedWorkouts));
     
     setCurrentWorkout({
       id: "",
@@ -54,7 +73,7 @@ const WorkoutTracker = () => {
     
     toast({
       title: "Success!",
-      description: "Your workout has been saved",
+      description: "Your workout has been saved permanently",
     });
   };
 
@@ -143,7 +162,6 @@ const WorkoutTracker = () => {
       <Navbar />
       
       <main className="flex-grow">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
           <div className="section-container py-12 md:py-16">
             <div className="max-w-3xl mx-auto text-center">

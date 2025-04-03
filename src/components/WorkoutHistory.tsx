@@ -2,13 +2,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, ChevronDown, ChevronUp, Calendar, Dumbbell } from "lucide-react";
+import { Edit2, Trash2, ChevronDown, ChevronUp, Calendar, Dumbbell, Download } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface WorkoutHistoryProps {
   workouts: Array<{
     id: string;
     date: string;
+    savedAt?: string;
     exercises: Array<{
       name: string;
       sets: Array<{
@@ -30,6 +31,22 @@ const WorkoutHistory = ({ workouts, onEdit, onDelete }: WorkoutHistoryProps) => 
         ? prevOpenItems.filter(item => item !== id)
         : [...prevOpenItems, id]
     );
+  };
+
+  const exportWorkoutsAsJson = () => {
+    try {
+      const dataStr = JSON.stringify(workouts, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `workout-history-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    } catch (error) {
+      console.error("Error exporting workouts:", error);
+    }
   };
 
   if (workouts.length === 0) {
@@ -56,6 +73,18 @@ const WorkoutHistory = ({ workouts, onEdit, onDelete }: WorkoutHistoryProps) => 
   
   return (
     <div className="space-y-4">
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={exportWorkoutsAsJson}
+          className="flex items-center gap-1"
+        >
+          <Download className="h-4 w-4" />
+          Export Data
+        </Button>
+      </div>
+      
       {sortedWorkouts.map((workout) => {
         const isOpen = openItems.includes(workout.id);
         const formattedDate = new Date(workout.date).toLocaleDateString('en-US', {
