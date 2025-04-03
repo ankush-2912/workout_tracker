@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -109,6 +110,140 @@ const ProgressPage = () => {
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
   const [chartType, setChartType] = useState<"line" | "bar">("line");
   const [volumeChartType, setVolumeChartType] = useState<"line" | "bar">("bar");
+  
+  // Calculate progress metrics
+  const progressMetrics = useMemo(() => {
+    // Find the latest workout date
+    const sortedWorkouts = [...workouts].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    // Calculate current streak
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let currentStreakDays = 0;
+    
+    if (sortedWorkouts.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const latestWorkoutDate = new Date(sortedWorkouts[0].date);
+      latestWorkoutDate.setHours(0, 0, 0, 0);
+      
+      // Check if latest workout is today or yesterday
+      const diffTime = Math.abs(today.getTime() - latestWorkoutDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 1) {
+        currentStreak = 1;
+        
+        // Count consecutive workout days
+        for (let i = 1; i < sortedWorkouts.length; i++) {
+          const currentDate = new Date(sortedWorkouts[i-1].date);
+          const prevDate = new Date(sortedWorkouts[i].date);
+          
+          currentDate.setHours(0, 0, 0, 0);
+          prevDate.setHours(0, 0, 0, 0);
+          
+          const timeDiff = Math.abs(currentDate.getTime() - prevDate.getTime());
+          const dayDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+          
+          if (dayDiff === 1) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+      
+      // Calculate best streak
+      let tempStreak = 1;
+      for (let i = 1; i < sortedWorkouts.length; i++) {
+        const currentDate = new Date(sortedWorkouts[i-1].date);
+        const prevDate = new Date(sortedWorkouts[i].date);
+        
+        currentDate.setHours(0, 0, 0, 0);
+        prevDate.setHours(0, 0, 0, 0);
+        
+        const timeDiff = Math.abs(currentDate.getTime() - prevDate.getTime());
+        const dayDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+        
+        if (dayDiff === 1) {
+          tempStreak++;
+        } else {
+          if (tempStreak > bestStreak) {
+            bestStreak = tempStreak;
+          }
+          tempStreak = 1;
+        }
+      }
+      
+      if (tempStreak > bestStreak) {
+        bestStreak = tempStreak;
+      }
+      
+      if (currentStreak > bestStreak) {
+        bestStreak = currentStreak;
+      }
+    }
+    
+    // Calculate workouts per week (over last 4 weeks)
+    const fourWeeksAgo = new Date();
+    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+    
+    const recentWorkouts = workouts.filter(
+      workout => new Date(workout.date) >= fourWeeksAgo
+    );
+    
+    const workoutsPerWeek = recentWorkouts.length / 4;
+    
+    return {
+      currentStreak: currentStreak,
+      bestStreak: bestStreak || currentStreak,
+      workoutsPerWeek: workoutsPerWeek,
+      totalWorkouts: workouts.length
+    };
+  }, [workouts]);
+  
+  // Calculate workout frequency data
+  const workoutFrequencyData = useMemo(() => {
+    const dateMap = new Map();
+    
+    // Get date range
+    let startDate = new Date();
+    let endDate = new Date();
+    
+    if (timeRange === "week") {
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      startDate.setDate(startDate.getDate() - 30);
+    } else {
+      // all time - get earliest workout date
+      if (workouts.length > 0) {
+        const dates = workouts.map(w => new Date(w.date).getTime());
+        startDate = new Date(Math.min(...dates));
+      } else {
+        startDate.setDate(startDate.getDate() - 30); // Default to last 30 days
+      }
+    }
+    
+    // Initialize all dates with 0 count
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateString = d.toISOString().split('T')[0];
+      dateMap.set(dateString, 0);
+    }
+    
+    // Count workouts per day
+    workouts.forEach(workout => {
+      const dateString = workout.date;
+      if (dateMap.has(dateString)) {
+        dateMap.set(dateString, dateMap.get(dateString) + 1);
+      }
+    });
+    
+    // Convert to array for recharts
+    return Array.from(dateMap, ([date, count]) => ({ date, count }));
+  }, [workouts, timeRange]);
   
   const exerciseOptions = useMemo(() => {
     const exerciseSet = new Set();
