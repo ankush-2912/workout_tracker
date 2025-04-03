@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -111,17 +110,13 @@ const ProgressPage = () => {
   const [chartType, setChartType] = useState<"line" | "bar">("line");
   const [volumeChartType, setVolumeChartType] = useState<"line" | "bar">("bar");
   
-  // Calculate progress metrics
   const progressMetrics = useMemo(() => {
-    // Find the latest workout date
     const sortedWorkouts = [...workouts].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
     
-    // Calculate current streak
     let currentStreak = 0;
     let bestStreak = 0;
-    let currentStreakDays = 0;
     
     if (sortedWorkouts.length > 0) {
       const today = new Date();
@@ -130,14 +125,12 @@ const ProgressPage = () => {
       const latestWorkoutDate = new Date(sortedWorkouts[0].date);
       latestWorkoutDate.setHours(0, 0, 0, 0);
       
-      // Check if latest workout is today or yesterday
       const diffTime = Math.abs(today.getTime() - latestWorkoutDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
       if (diffDays <= 1) {
         currentStreak = 1;
         
-        // Count consecutive workout days
         for (let i = 1; i < sortedWorkouts.length; i++) {
           const currentDate = new Date(sortedWorkouts[i-1].date);
           const prevDate = new Date(sortedWorkouts[i].date);
@@ -156,7 +149,6 @@ const ProgressPage = () => {
         }
       }
       
-      // Calculate best streak
       let tempStreak = 1;
       for (let i = 1; i < sortedWorkouts.length; i++) {
         const currentDate = new Date(sortedWorkouts[i-1].date);
@@ -187,29 +179,16 @@ const ProgressPage = () => {
       }
     }
     
-    // Calculate workouts per week (over last 4 weeks)
-    const fourWeeksAgo = new Date();
-    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-    
-    const recentWorkouts = workouts.filter(
-      workout => new Date(workout.date) >= fourWeeksAgo
-    );
-    
-    const workoutsPerWeek = recentWorkouts.length / 4;
-    
     return {
       currentStreak: currentStreak,
       bestStreak: bestStreak || currentStreak,
-      workoutsPerWeek: workoutsPerWeek,
       totalWorkouts: workouts.length
     };
   }, [workouts]);
   
-  // Calculate workout frequency data
   const workoutFrequencyData = useMemo(() => {
     const dateMap = new Map();
     
-    // Get date range
     let startDate = new Date();
     let endDate = new Date();
     
@@ -218,22 +197,19 @@ const ProgressPage = () => {
     } else if (timeRange === "month") {
       startDate.setDate(startDate.getDate() - 30);
     } else {
-      // all time - get earliest workout date
       if (workouts.length > 0) {
         const dates = workouts.map(w => new Date(w.date).getTime());
         startDate = new Date(Math.min(...dates));
       } else {
-        startDate.setDate(startDate.getDate() - 30); // Default to last 30 days
+        startDate.setDate(startDate.getDate() - 30);
       }
     }
     
-    // Initialize all dates with 0 count
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateString = d.toISOString().split('T')[0];
       dateMap.set(dateString, 0);
     }
     
-    // Count workouts per day
     workouts.forEach(workout => {
       const dateString = workout.date;
       if (dateMap.has(dateString)) {
@@ -241,7 +217,6 @@ const ProgressPage = () => {
       }
     });
     
-    // Convert to array for recharts
     return Array.from(dateMap, ([date, count]) => ({ date, count }));
   }, [workouts, timeRange]);
   
@@ -346,7 +321,7 @@ const ProgressPage = () => {
         </div>
         
         <div className="section-container py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -360,26 +335,6 @@ const ProgressPage = () => {
                   <Progress value={progressMetrics.currentStreak / (progressMetrics.bestStreak || 1) * 100} className="h-2 bg-slate-700" />
                   <p className="text-sm text-muted-foreground mt-2">
                     Best: {progressMetrics.bestStreak} days
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-2 border-muted/30 bg-slate-900/60 shadow-lg">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-violet-400" />
-                  Weekly Consistency
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center">
-                  <div className="text-4xl font-bold text-violet-300 mb-2">
-                    {progressMetrics.workoutsPerWeek.toFixed(1)}
-                  </div>
-                  <Progress value={progressMetrics.workoutsPerWeek / 7 * 100} className="h-2 bg-slate-700" />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Workouts per week
                   </p>
                 </div>
               </CardContent>
