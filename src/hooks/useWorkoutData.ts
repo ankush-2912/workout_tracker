@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/supabase/client';
+import { supabase, isSupabaseConfigured } from '@/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,12 +32,13 @@ export const useWorkoutData = () => {
     date: new Date().toISOString().split("T")[0],
     exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
   });
+  const supabaseConfigured = isSupabaseConfigured();
 
   // Load workouts from Supabase for logged-in users, or from localStorage otherwise
   const loadWorkouts = async () => {
     setLoading(true);
     
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && supabaseConfigured) {
       try {
         const { data, error } = await supabase
           .from('workouts')
@@ -75,7 +76,7 @@ export const useWorkoutData = () => {
         loadFromLocalStorage();
       }
     } else {
-      // Not authenticated, use localStorage
+      // Not authenticated or Supabase not configured, use localStorage
       loadFromLocalStorage();
     }
     
@@ -94,6 +95,8 @@ export const useWorkoutData = () => {
   };
   
   const migrateLocalStorageToSupabase = async (existingWorkouts: Workout[]) => {
+    if (!supabaseConfigured) return;
+    
     try {
       const saved = localStorage.getItem("workouts");
       if (!saved || !user) return;
@@ -141,7 +144,7 @@ export const useWorkoutData = () => {
       savedAt: new Date().toISOString(),
     };
 
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && supabaseConfigured) {
       try {
         // Add user_id to the workout
         const supabaseWorkout = {
@@ -191,7 +194,7 @@ export const useWorkoutData = () => {
         return { success: false, error };
       }
     } else {
-      // Not authenticated, save to localStorage
+      // Not authenticated or Supabase not configured, save to localStorage
       try {
         const updatedWorkouts = workout.id 
           ? workouts.map(w => w.id === workout.id ? workoutToSave : w)
@@ -210,7 +213,7 @@ export const useWorkoutData = () => {
 
   // Delete a workout from Supabase for logged-in users, or from localStorage otherwise
   const deleteWorkout = async (id: string) => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && supabaseConfigured) {
       try {
         const { error } = await supabase
           .from('workouts')
@@ -238,7 +241,7 @@ export const useWorkoutData = () => {
         return { success: false, error };
       }
     } else {
-      // Not authenticated, delete from localStorage
+      // Not authenticated or Supabase not configured, delete from localStorage
       try {
         const updatedWorkouts = workouts.filter(workout => workout.id !== id);
         setWorkouts(updatedWorkouts);

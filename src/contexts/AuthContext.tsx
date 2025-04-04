@@ -1,7 +1,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/supabase/client';
+import { supabase, isSupabaseConfigured } from '@/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type AuthContextType = {
   session: Session | null;
@@ -9,6 +10,7 @@ type AuthContextType = {
   loading: boolean;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
+  isSupabaseReady: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,12 +19,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const supabaseConfigured = isSupabaseConfigured();
 
   useEffect(() => {
+    if (!supabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch(error => {
+      console.error('Error getting session:', error);
       setLoading(false);
     });
 
@@ -34,9 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabaseConfigured]);
 
   const signOut = async () => {
+    if (!supabaseConfigured) {
+      toast({
+        title: "Error",
+        description: "Supabase is not properly configured.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await supabase.auth.signOut();
     } catch (error) {
@@ -49,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     signOut,
-    isAuthenticated: !!session
+    isAuthenticated: !!session,
+    isSupabaseReady: supabaseConfigured
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
