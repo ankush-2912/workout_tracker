@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Dumbbell } from "lucide-react";
+import UserProfileMenu from "@/components/UserProfileMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -63,12 +66,23 @@ const Navbar = () => {
           </nav>
           
           <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
-            <Button asChild size="sm" variant="outline" className="mr-2 border-violet-700/50 text-violet-300 hover:text-violet-100 hover:bg-violet-900/30">
-              <Link to="/calculator">Track Power</Link>
-            </Button>
-            <Button asChild size="sm" className="solo-button">
-              <Link to="/workout-tracker">Log Training</Link>
-            </Button>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <Button asChild size="sm" className="solo-button">
+                  <Link to="/workout-tracker">Log Training</Link>
+                </Button>
+                <UserProfileMenu />
+              </div>
+            ) : (
+              <>
+                <Button asChild size="sm" variant="outline" className="mr-2 border-violet-700/50 text-violet-300 hover:text-violet-100 hover:bg-violet-900/30">
+                  <Link to="/auth">Login</Link>
+                </Button>
+                <Button asChild size="sm" className="solo-button">
+                  <Link to="/auth?tab=signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -99,16 +113,25 @@ const Navbar = () => {
             </div>
             <div className="space-y-6 py-6 px-5">
               <div className="grid grid-cols-2 gap-y-4 gap-x-4">
-                <Button asChild variant="outline" className="w-full border-violet-700/50 text-violet-300 hover:text-violet-100 hover:bg-violet-900/30">
-                  <Link to="/calculator" onClick={() => setIsMenuOpen(false)}>
-                    Track Power
-                  </Link>
-                </Button>
-                <Button asChild className="w-full solo-button">
-                  <Link to="/workout-tracker" onClick={() => setIsMenuOpen(false)}>
-                    Log Training
-                  </Link>
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <Button asChild variant="outline" className="w-full border-violet-700/50 text-violet-300 hover:text-violet-100 hover:bg-violet-900/30" onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/profile">Profile</Link>
+                    </Button>
+                    <Button asChild className="w-full solo-button" onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/workout-tracker">Log Training</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" className="w-full border-violet-700/50 text-violet-300 hover:text-violet-100 hover:bg-violet-900/30" onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/auth">Login</Link>
+                    </Button>
+                    <Button asChild className="w-full solo-button" onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/auth?tab=signup">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,46 +7,26 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Save, Trash2, Calendar, Dumbbell, Clock } from "lucide-react";
+import { Plus, Save, Trash2, Calendar, Dumbbell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import WorkoutHistory from "@/components/WorkoutHistory";
-
-const LOCAL_STORAGE_KEY = "workouts";
+import { useWorkoutData } from "@/hooks/useWorkoutData";
+import { useAuth } from "@/contexts/AuthContext";
 
 const WorkoutTracker = () => {
   const { toast } = useToast();
-  const [workouts, setWorkouts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error("Error loading workouts from localStorage:", error);
-      return [];
-    }
-  });
-  
-  const [currentWorkout, setCurrentWorkout] = useState({
-    id: "",
-    date: new Date().toISOString().split("T")[0],
-    exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
-  });
+  const { isAuthenticated } = useAuth();
+  const { 
+    workouts, 
+    currentWorkout, 
+    setCurrentWorkout, 
+    saveWorkout, 
+    deleteWorkout 
+  } = useWorkoutData();
   
   const [activeTab, setActiveTab] = useState("record");
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(workouts));
-    } catch (error) {
-      console.error("Error saving workouts to localStorage:", error);
-      toast({
-        title: "Storage Error",
-        description: "There was an error saving your workout data",
-        variant: "destructive",
-      });
-    }
-  }, [workouts, toast]);
-
-  const saveWorkout = () => {
+  const handleSaveWorkout = async () => {
     if (!currentWorkout.exercises[0].name) {
       toast({
         title: "Missing information",
@@ -56,28 +36,22 @@ const WorkoutTracker = () => {
       return;
     }
     
-    const workoutToSave = {
-      ...currentWorkout,
-      id: currentWorkout.id || Date.now().toString(),
-      savedAt: new Date().toISOString(),
-    };
+    const result = await saveWorkout(currentWorkout);
     
-    const updatedWorkouts = currentWorkout.id 
-      ? workouts.map(w => w.id === currentWorkout.id ? workoutToSave : w)
-      : [...workouts, workoutToSave];
-    
-    setWorkouts(updatedWorkouts);
-    
-    setCurrentWorkout({
-      id: "",
-      date: new Date().toISOString().split("T")[0],
-      exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
-    });
-    
-    toast({
-      title: "Success!",
-      description: "Your workout has been saved permanently",
-    });
+    if (result.success) {
+      setCurrentWorkout({
+        id: "",
+        date: new Date().toISOString().split("T")[0],
+        exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
+      });
+      
+      toast({
+        title: "Success!",
+        description: isAuthenticated 
+          ? "Your workout has been saved to your account" 
+          : "Your workout has been saved locally",
+      });
+    }
   };
 
   const addExercise = () => {
@@ -145,14 +119,15 @@ const WorkoutTracker = () => {
     });
   };
 
-  const deleteWorkout = (id: string) => {
-    const updatedWorkouts = workouts.filter(workout => workout.id !== id);
-    setWorkouts(updatedWorkouts);
+  const handleDeleteWorkout = async (id: string) => {
+    const result = await deleteWorkout(id);
     
-    toast({
-      title: "Workout deleted",
-      description: "The workout has been removed from your history",
-    });
+    if (result.success) {
+      toast({
+        title: "Workout deleted",
+        description: "The workout has been removed from your history",
+      });
+    }
   };
 
   const editWorkout = (workout: any) => {
@@ -172,6 +147,17 @@ const WorkoutTracker = () => {
               <p className="text-white/90 text-lg">
                 Track your workouts, monitor your progress, and push your limits
               </p>
+              {!isAuthenticated && (
+                <div className="mt-4 bg-indigo-900/50 rounded-md p-3 text-sm">
+                  <p className="text-white/80">
+                    You're not logged in. Your workouts will be saved locally in this browser.
+                    <Button asChild variant="link" className="text-white underline ml-2 p-0 h-auto">
+                      <a href="/auth">Login</a>
+                    </Button>
+                    to save your workouts to your account.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -292,7 +278,7 @@ const WorkoutTracker = () => {
                   <Button onClick={addExercise} className="w-full sm:w-auto" variant="outline">
                     <Plus className="mr-2 h-4 w-4" /> Add Exercise
                   </Button>
-                  <Button onClick={saveWorkout} className="w-full sm:w-auto">
+                  <Button onClick={handleSaveWorkout} className="w-full sm:w-auto">
                     <Save className="mr-2 h-4 w-4" /> {currentWorkout.id ? "Update Workout" : "Save Workout"}
                   </Button>
                 </CardFooter>
@@ -303,7 +289,7 @@ const WorkoutTracker = () => {
               <WorkoutHistory 
                 workouts={workouts} 
                 onEdit={editWorkout} 
-                onDelete={deleteWorkout} 
+                onDelete={handleDeleteWorkout} 
               />
             </TabsContent>
           </Tabs>
