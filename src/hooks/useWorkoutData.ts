@@ -52,10 +52,13 @@ export const useWorkoutData = () => {
         if (data) {
           // Parse the exercises JSON if needed
           const parsedWorkouts = data.map(workout => ({
-            ...workout,
+            id: workout.id,
+            date: workout.date,
+            savedAt: workout.savedAt,
             exercises: typeof workout.exercises === 'string' 
               ? JSON.parse(workout.exercises) 
-              : workout.exercises
+              : workout.exercises,
+            user_id: workout.user_id
           }));
           
           setWorkouts(parsedWorkouts);
@@ -106,10 +109,12 @@ export const useWorkoutData = () => {
       const workoutsToUpload = localWorkouts
         .filter(w => !existingIds.has(w.id))
         .map(w => ({
-          ...w,
+          id: w.id,
+          date: w.date,
+          savedAt: w.savedAt || new Date().toISOString(),
           user_id: user.id,
           // Convert exercises to string if needed by your Supabase schema
-          exercises: typeof w.exercises === 'string' ? w.exercises : JSON.stringify(w.exercises)
+          exercises: typeof w.exercises === 'string' ? w.exercises : w.exercises
         }));
       
       if (workoutsToUpload.length === 0) return;
@@ -145,12 +150,12 @@ export const useWorkoutData = () => {
       try {
         // Add user_id to the workout
         const supabaseWorkout = {
-          ...workoutToSave,
+          id: workoutToSave.id,
+          date: workoutToSave.date,
+          savedAt: workoutToSave.savedAt,
           user_id: user.id,
-          // Convert exercises to string if needed by your Supabase schema
-          exercises: typeof workoutToSave.exercises === 'string' 
-            ? workoutToSave.exercises 
-            : JSON.stringify(workoutToSave.exercises)
+          // Convert exercises to proper format for Supabase
+          exercises: workoutToSave.exercises
         };
         
         let response;
