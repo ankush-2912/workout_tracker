@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '@/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,13 +32,12 @@ export const useWorkoutData = () => {
     date: new Date().toISOString().split("T")[0],
     exercises: [{ name: "", sets: [{ weight: "", reps: "" }] }]
   });
-  const supabaseConfigured = isSupabaseConfigured();
 
   // Load workouts from Supabase for logged-in users, or from localStorage otherwise
   const loadWorkouts = async () => {
     setLoading(true);
     
-    if (isAuthenticated && user && supabaseConfigured) {
+    if (isAuthenticated && user) {
       try {
         const { data, error } = await supabase
           .from('workouts')
@@ -95,8 +94,6 @@ export const useWorkoutData = () => {
   };
   
   const migrateLocalStorageToSupabase = async (existingWorkouts: Workout[]) => {
-    if (!supabaseConfigured) return;
-    
     try {
       const saved = localStorage.getItem("workouts");
       if (!saved || !user) return;
@@ -144,7 +141,7 @@ export const useWorkoutData = () => {
       savedAt: new Date().toISOString(),
     };
 
-    if (isAuthenticated && user && supabaseConfigured) {
+    if (isAuthenticated && user) {
       try {
         // Add user_id to the workout
         const supabaseWorkout = {
@@ -213,7 +210,7 @@ export const useWorkoutData = () => {
 
   // Delete a workout from Supabase for logged-in users, or from localStorage otherwise
   const deleteWorkout = async (id: string) => {
-    if (isAuthenticated && user && supabaseConfigured) {
+    if (isAuthenticated && user) {
       try {
         const { error } = await supabase
           .from('workouts')
