@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/supabase/client";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,10 +14,15 @@ import { LogIn, UserPlus } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Get the tab from the URL query params
+  const queryParams = new URLSearchParams(location.search);
+  const defaultTab = queryParams.get('tab') === 'signup' ? 'signup' : 'signin';
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +49,7 @@ const Auth = () => {
         description: error.message || "An error occurred during sign up",
         variant: "destructive",
       });
+      console.error("Sign up error:", error);
     } finally {
       setLoading(false);
     }
@@ -73,6 +79,7 @@ const Auth = () => {
         description: error.message || "An error occurred during sign in",
         variant: "destructive",
       });
+      console.error("Sign in error:", error);
     } finally {
       setLoading(false);
     }
@@ -96,7 +103,7 @@ const Auth = () => {
         
         <div className="section-container py-12">
           <div className="max-w-md mx-auto">
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue={defaultTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8">
                 <TabsTrigger value="signin" className="text-lg py-3">Sign In</TabsTrigger>
                 <TabsTrigger value="signup" className="text-lg py-3">Sign Up</TabsTrigger>

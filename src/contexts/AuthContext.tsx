@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '@/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 type AuthContextType = {
@@ -20,14 +20,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const supabaseConfigured = isSupabaseConfigured();
+  const [isSupabaseReady, setIsSupabaseReady] = useState(true);
 
   useEffect(() => {
-    if (!supabaseConfigured) {
-      setLoading(false);
-      return;
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -46,18 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabaseConfigured]);
+  }, []);
 
   const signOut = async () => {
-    if (!supabaseConfigured) {
-      toast({
-        title: "Error",
-        description: "Supabase is not properly configured.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       await supabase.auth.signOut();
     } catch (error) {
@@ -71,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signOut,
     isAuthenticated: !!session,
-    isSupabaseReady: supabaseConfigured
+    isSupabaseReady
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
