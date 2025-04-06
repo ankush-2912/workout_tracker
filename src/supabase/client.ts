@@ -9,7 +9,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // Check if the required environment variables are set
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
-    'Missing Supabase environment variables. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.',
+    'Missing Supabase environment variables. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file or Lovable settings.',
   )
   
   // Only show toast if we're in the browser context
@@ -17,7 +17,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
     setTimeout(() => {
       toast({
         title: "Supabase Configuration Error",
-        description: "Missing Supabase credentials. Please check your environment configuration.",
+        description: "Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your Lovable Supabase integration.",
         variant: "destructive",
       })
     }, 1000)
