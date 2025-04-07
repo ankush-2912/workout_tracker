@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,7 +53,7 @@ export const useWorkoutData = () => {
           const parsedWorkouts = data.map(workout => ({
             id: workout.id,
             date: workout.date,
-            savedAt: workout.savedAt,
+            savedAt: workout.savedat,
             exercises: typeof workout.exercises === 'string' 
               ? JSON.parse(workout.exercises) 
               : workout.exercises,
@@ -62,9 +61,6 @@ export const useWorkoutData = () => {
           }));
           
           setWorkouts(parsedWorkouts);
-          
-          // Migrate localStorage data to Supabase if needed
-          migrateLocalStorageToSupabase(parsedWorkouts);
         }
       } catch (error: any) {
         console.error('Error loading workouts:', error);
@@ -90,9 +86,16 @@ export const useWorkoutData = () => {
       const saved = localStorage.getItem("workouts");
       if (saved) {
         setWorkouts(JSON.parse(saved));
+      } else {
+        // Initialize with empty array if no data exists
+        localStorage.setItem("workouts", JSON.stringify([]));
+        setWorkouts([]);
       }
     } catch (error) {
       console.error("Error loading workouts from localStorage:", error);
+      // Initialize with empty array if error
+      localStorage.setItem("workouts", JSON.stringify([]));
+      setWorkouts([]);
     }
   };
   
@@ -152,7 +155,7 @@ export const useWorkoutData = () => {
         const supabaseWorkout = {
           id: workoutToSave.id,
           date: workoutToSave.date,
-          savedAt: workoutToSave.savedAt,
+          savedat: workoutToSave.savedAt,
           user_id: user.id,
           // Convert exercises to proper format for Supabase
           exercises: workoutToSave.exercises

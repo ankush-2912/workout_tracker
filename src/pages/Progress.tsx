@@ -1,10 +1,8 @@
-
 import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { generateRandomWorkouts, generateRandomBodyMetrics } from "@/utils/workoutGenerators";
 import MetricsCards from "@/components/progress/MetricsCards";
 import WorkoutFrequencyChart from "@/components/progress/WorkoutFrequencyChart";
 import BodyMetricsCharts from "@/components/progress/BodyMetricsCharts";
@@ -14,17 +12,16 @@ import NoWorkoutData from "@/components/progress/NoWorkoutData";
 const ProgressPage = () => {
   const [workouts, setWorkouts] = useState(() => {
     const saved = localStorage.getItem("workouts");
-    const parsedSaved = saved ? JSON.parse(saved) : [];
-    return parsedSaved.length > 0 ? parsedSaved : generateRandomWorkouts(30);
+    return saved ? JSON.parse(saved) : [];
   });
   
   useEffect(() => {
-    if (!localStorage.getItem("workouts") || JSON.parse(localStorage.getItem("workouts") || "[]").length === 0) {
-      localStorage.setItem("workouts", JSON.stringify(workouts));
+    if (!localStorage.getItem("workouts")) {
+      localStorage.setItem("workouts", JSON.stringify([]));
     }
-  }, [workouts]);
+  }, []);
   
-  const [bodyMetrics, setBodyMetrics] = useState(() => generateRandomBodyMetrics(workouts));
+  const [bodyMetrics, setBodyMetrics] = useState([]);
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
   
   const progressMetrics = useMemo(() => {

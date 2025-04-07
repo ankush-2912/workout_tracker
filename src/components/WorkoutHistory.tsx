@@ -73,17 +73,19 @@ const WorkoutHistory = ({ workouts, onEdit, onDelete }: WorkoutHistoryProps) => 
   
   return (
     <div className="space-y-4">
-      <div className="flex justify-end mb-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={exportWorkoutsAsJson}
-          className="flex items-center gap-1"
-        >
-          <Download className="h-4 w-4" />
-          Export Data
-        </Button>
-      </div>
+      {workouts.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={exportWorkoutsAsJson}
+            className="flex items-center gap-1"
+          >
+            <Download className="h-4 w-4" />
+            Export Data
+          </Button>
+        </div>
+      )}
       
       {sortedWorkouts.map((workout) => {
         const isOpen = openItems.includes(workout.id);
