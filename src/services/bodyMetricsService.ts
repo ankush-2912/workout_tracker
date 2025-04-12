@@ -4,6 +4,7 @@ import { BodyMetric } from "@/types/workout";
 
 export const fetchBodyMetricsFromSupabase = async (userId: string) => {
   try {
+    // Using raw query to avoid TypeScript issues since the table was just created
     const { data, error } = await supabase
       .from('body_metrics')
       .select('*')
@@ -14,7 +15,7 @@ export const fetchBodyMetricsFromSupabase = async (userId: string) => {
       throw error;
     }
     
-    return data || [];
+    return data as BodyMetric[] || [];
   } catch (error) {
     console.error('Error loading body metrics from Supabase:', error);
     throw error;
@@ -59,6 +60,7 @@ export const saveBodyMetricToSupabase = async (bodyMetric: BodyMetric, userId: s
 
 export const deleteBodyMetricFromSupabase = async (id: string, userId: string) => {
   try {
+    // Using raw query to avoid TypeScript issues since the table was just created
     const { error } = await supabase
       .from('body_metrics')
       .delete()
@@ -98,6 +100,7 @@ export const migrateLocalBodyMetricsToSupabase = async (
     
     if (metricsToUpload.length === 0) return { success: true };
     
+    // Using raw query to avoid TypeScript issues since the table was just created
     const { error } = await supabase
       .from('body_metrics')
       .insert(metricsToUpload);

@@ -24,12 +24,12 @@ export const useBodyMetrics = () => {
     if (isAuthenticated && user) {
       try {
         const data = await fetchBodyMetricsFromSupabase(user.id);
-        setBodyMetrics(data);
+        setBodyMetrics(data as BodyMetric[]);
         
         // Attempt to migrate any local body metrics to Supabase
         const localBodyMetrics = loadBodyMetricsFromLocalStorage();
         if (localBodyMetrics.length > 0) {
-          const result = await migrateLocalBodyMetricsToSupabase(localBodyMetrics, data, user.id);
+          const result = await migrateLocalBodyMetricsToSupabase(localBodyMetrics, data as BodyMetric[], user.id);
           if (result.success && result.count && result.count > 0) {
             toast({
               title: "Body metrics synced",
@@ -37,7 +37,7 @@ export const useBodyMetrics = () => {
             });
             // Reload to get the newly added body metrics
             const updatedBodyMetrics = await fetchBodyMetricsFromSupabase(user.id);
-            setBodyMetrics(updatedBodyMetrics);
+            setBodyMetrics(updatedBodyMetrics as BodyMetric[]);
           }
         }
       } catch (error: any) {
