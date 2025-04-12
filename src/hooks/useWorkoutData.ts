@@ -1,25 +1,17 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Workout } from '@/types/workout';
+import { loadFromLocalStorage, updateLocalStorage } from '@/utils/workoutStorage';
+import { 
+  fetchWorkoutsFromSupabase,
+  saveWorkoutToSupabase,
+  deleteWorkoutFromSupabase,
+  migrateLocalToSupabase
+} from '@/services/workoutService';
 
-type WorkoutSet = {
-  weight: string;
-  reps: string;
-};
-
-type Exercise = {
-  name: string;
-  sets: WorkoutSet[];
-};
-
-export type Workout = {
-  id: string;
-  date: string;
-  savedAt?: string;
-  exercises: Exercise[];
-  user_id?: string;
-};
+export { type Workout } from '@/types/workout';
 
 export const useWorkoutData = () => {
   const { user, isAuthenticated } = useAuth();
@@ -38,29 +30,22 @@ export const useWorkoutData = () => {
     
     if (isAuthenticated && user) {
       try {
-        const { data, error } = await supabase
-          .from('workouts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false });
-          
-        if (error) {
-          throw error;
-        }
+        const parsedWorkouts = await fetchWorkoutsFromSupabase(user.id);
+        setWorkouts(parsedWorkouts);
         
-        if (data) {
-          // Parse the exercises JSON if needed
-          const parsedWorkouts = data.map(workout => ({
-            id: workout.id,
-            date: workout.date,
-            savedAt: workout.savedat,
-            exercises: typeof workout.exercises === 'string' 
-              ? JSON.parse(workout.exercises) 
-              : workout.exercises,
-            user_id: workout.user_id
-          }));
-          
-          setWorkouts(parsedWorkouts);
+        // Attempt to migrate any local workouts to Supabase
+        const localWorkouts = loadFromLocalStorage();
+        if (localWorkouts.length > 0) {
+          const result = await migrateLocalToSupabase(localWorkouts, parsedWorkouts, user.id);
+          if (result.success && result.count && result.count > 0) {
+            toast({
+              title: "Workouts synced",
+              description: `${result.count} local workouts uploaded to your account`,
+            });
+            // Reload to get the newly added workouts
+            const updatedWorkouts = await fetchWorkoutsFromSupabase(user.id);
+            setWorkouts(updatedWorkouts);
+          }
         }
       } catch (error: any) {
         console.error('Error loading workouts:', error);
@@ -71,74 +56,16 @@ export const useWorkoutData = () => {
         });
         
         // Fallback to localStorage
-        loadFromLocalStorage();
+        const localWorkouts = loadFromLocalStorage();
+        setWorkouts(localWorkouts);
       }
     } else {
       // Not authenticated or Supabase not configured, use localStorage
-      loadFromLocalStorage();
+      const localWorkouts = loadFromLocalStorage();
+      setWorkouts(localWorkouts);
     }
     
     setLoading(false);
-  };
-  
-  const loadFromLocalStorage = () => {
-    try {
-      const saved = localStorage.getItem("workouts");
-      if (saved) {
-        setWorkouts(JSON.parse(saved));
-      } else {
-        // Initialize with empty array if no data exists
-        localStorage.setItem("workouts", JSON.stringify([]));
-        setWorkouts([]);
-      }
-    } catch (error) {
-      console.error("Error loading workouts from localStorage:", error);
-      // Initialize with empty array if error
-      localStorage.setItem("workouts", JSON.stringify([]));
-      setWorkouts([]);
-    }
-  };
-  
-  const migrateLocalStorageToSupabase = async (existingWorkouts: Workout[]) => {
-    try {
-      const saved = localStorage.getItem("workouts");
-      if (!saved || !user) return;
-      
-      const localWorkouts = JSON.parse(saved) as Workout[];
-      if (localWorkouts.length === 0) return;
-      
-      // Check which workouts need to be uploaded (not already in Supabase)
-      const existingIds = new Set(existingWorkouts.map(w => w.id));
-      const workoutsToUpload = localWorkouts
-        .filter(w => !existingIds.has(w.id))
-        .map(w => ({
-          id: w.id,
-          date: w.date,
-          savedAt: w.savedAt || new Date().toISOString(),
-          user_id: user.id,
-          // Convert exercises to string if needed by your Supabase schema
-          exercises: typeof w.exercises === 'string' ? w.exercises : w.exercises
-        }));
-      
-      if (workoutsToUpload.length === 0) return;
-      
-      const { error } = await supabase
-        .from('workouts')
-        .insert(workoutsToUpload);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Workouts synced",
-        description: `${workoutsToUpload.length} local workouts uploaded to your account`,
-      });
-      
-      // Reload the workouts to get the newly added ones
-      loadWorkouts();
-      
-    } catch (error: any) {
-      console.error("Error migrating workouts to Supabase:", error);
-    }
   };
 
   // Save a workout to Supabase for logged-in users, or to localStorage otherwise
@@ -151,34 +78,7 @@ export const useWorkoutData = () => {
 
     if (isAuthenticated && user) {
       try {
-        // Add user_id to the workout
-        const supabaseWorkout = {
-          id: workoutToSave.id,
-          date: workoutToSave.date,
-          savedat: workoutToSave.savedAt,
-          user_id: user.id,
-          // Convert exercises to proper format for Supabase
-          exercises: workoutToSave.exercises
-        };
-        
-        let response;
-        if (workout.id) {
-          // Update existing workout
-          response = await supabase
-            .from('workouts')
-            .update(supabaseWorkout)
-            .eq('id', workout.id)
-            .eq('user_id', user.id);
-        } else {
-          // Insert new workout
-          response = await supabase
-            .from('workouts')
-            .insert(supabaseWorkout);
-        }
-        
-        if (response.error) {
-          throw response.error;
-        }
+        const result = await saveWorkoutToSupabase(workoutToSave, user.id);
         
         // Also update local state
         const updatedWorkouts = workout.id 
@@ -220,15 +120,7 @@ export const useWorkoutData = () => {
   const deleteWorkout = async (id: string) => {
     if (isAuthenticated && user) {
       try {
-        const { error } = await supabase
-          .from('workouts')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', user.id);
-          
-        if (error) {
-          throw error;
-        }
+        await deleteWorkoutFromSupabase(id, user.id);
         
         // Also update local state
         const updatedWorkouts = workouts.filter(workout => workout.id !== id);
@@ -257,15 +149,6 @@ export const useWorkoutData = () => {
         console.error("Error deleting workout from localStorage:", error);
         return { success: false, error };
       }
-    }
-  };
-
-  // Helper function to update localStorage
-  const updateLocalStorage = (updatedWorkouts: Workout[]) => {
-    try {
-      localStorage.setItem("workouts", JSON.stringify(updatedWorkouts));
-    } catch (error) {
-      console.error("Error saving workouts to localStorage:", error);
     }
   };
 
