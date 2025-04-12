@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2, ChevronDown, ChevronUp, Calendar, Dumbbell, Download } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 interface WorkoutHistoryProps {
   workouts: Array<{
@@ -20,9 +20,15 @@ interface WorkoutHistoryProps {
   }>;
   onEdit: (workout: any) => void;
   onDelete: (id: string) => void;
+  className?: string;
 }
 
-const WorkoutHistory = ({ workouts, onEdit, onDelete }: WorkoutHistoryProps) => {
+const WorkoutHistory = ({ 
+  workouts, 
+  onEdit, 
+  onDelete, 
+  className 
+}: WorkoutHistoryProps) => {
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleOpen = (id: string) => {
@@ -66,13 +72,12 @@ const WorkoutHistory = ({ workouts, onEdit, onDelete }: WorkoutHistoryProps) => 
     );
   }
 
-  // Sort workouts by date (newest first)
   const sortedWorkouts = [...workouts].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
   
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4", className)}>
       {workouts.length > 0 && (
         <div className="flex justify-end mb-4">
           <Button 
