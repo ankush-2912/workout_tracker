@@ -16,3 +16,11 @@ export type Workout = {
   exercises: Exercise[];
   user_id?: string;
 };
+
+export type BodyMetric = {
+  id: string;
+  date: string;
+  weight: number;
+  savedAt?: string;
+  user_id?: string;
+};

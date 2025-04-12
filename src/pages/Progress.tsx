@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,6 +9,8 @@ import WorkoutFrequencyChart from "@/components/progress/WorkoutFrequencyChart";
 import BodyMetricsCharts from "@/components/progress/BodyMetricsCharts";
 import ExerciseProgressCharts from "@/components/progress/ExerciseProgressCharts";
 import NoWorkoutData from "@/components/progress/NoWorkoutData";
+import { useBodyMetrics } from "@/hooks/useBodyMetrics";
+import { useToast } from "@/hooks/use-toast";
 
 const ProgressPage = () => {
   const [workouts, setWorkouts] = useState(() => {
@@ -21,7 +24,8 @@ const ProgressPage = () => {
     }
   }, []);
   
-  const [bodyMetrics, setBodyMetrics] = useState([]);
+  const { bodyMetrics, saveBodyMetric, deleteBodyMetric, loading: bodyMetricsLoading } = useBodyMetrics();
+  const { toast } = useToast();
   const [timeRange, setTimeRange] = useState("all"); // all, month, week
   
   const progressMetrics = useMemo(() => {
@@ -180,6 +184,50 @@ const ProgressPage = () => {
     const date = new Date(dateString);
     return `${date.getMonth() + 1}/${date.getDate()}`;
   };
+
+  const handleAddBodyMetric = async (data: { date: string, weight: number }) => {
+    try {
+      const result = await saveBodyMetric({
+        id: "",
+        date: data.date,
+        weight: data.weight
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Weight logged",
+          description: "Your weight has been recorded successfully"
+        });
+      }
+    } catch (error) {
+      console.error("Error saving body metric:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your weight measurement",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteBodyMetric = async (id: string) => {
+    try {
+      const result = await deleteBodyMetric(id);
+      
+      if (result.success) {
+        toast({
+          title: "Weight deleted",
+          description: "Weight measurement has been removed"
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting body metric:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete weight measurement",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -233,8 +281,10 @@ const ProgressPage = () => {
             
             <TabsContent value="body" className="space-y-6">
               <BodyMetricsCharts 
-                filteredBodyMetrics={filteredBodyMetrics}
+                bodyMetrics={filteredBodyMetrics}
                 formatDate={formatDate}
+                onAddBodyMetric={handleAddBodyMetric}
+                onDeleteBodyMetric={handleDeleteBodyMetric}
               />
             </TabsContent>
             
