@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import MetricsCards from "@/components/progress/MetricsCards";
 import WorkoutFrequencyChart from "@/components/progress/WorkoutFrequencyChart";
 import BodyMetricsCharts from "@/components/progress/BodyMetricsCharts";
-import ExerciseProgressCharts from "@/components/progress/ExerciseProgressCharts";
+import ExerciseProgressCharts from "@/components/progress/exercise/ExerciseProgressCharts";
 import NoWorkoutData from "@/components/progress/NoWorkoutData";
 import { useProgressMetrics } from "@/hooks/useProgressMetrics";
 import { BodyMetric } from "@/types/workout";
