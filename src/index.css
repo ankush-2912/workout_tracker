@@ -62,6 +62,15 @@
   .blue-glow {
     @apply shadow-[0_0_15px_rgba(59,130,246,0.5)];
   }
+  .network-node {
+    @apply absolute rounded-full bg-violet-500/70 shadow-[0_0_5px_rgba(124,58,237,0.8)];
+    animation: pulse 3s infinite alternate;
+  }
+  .network-line {
+    @apply absolute bg-violet-500/30;
+    height: 1px;
+    transform-origin: left center;
+  }
 }
 
 /* Modern scrollbar */
@@ -100,6 +109,44 @@
   }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes networkFloat {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-5px) translateX(3px);
+  }
+  50% {
+    transform: translateY(0) translateX(8px);
+  }
+  75% {
+    transform: translateY(5px) translateX(3px);
+  }
+}
+
 /* Modern gradient backgrounds */
 .bg-gradient-modern-1 {
   @apply bg-gradient-to-r from-primary via-violet-600 to-blue-600;
@@ -134,3 +181,4 @@
 .solo-button {
   @apply bg-violet-700 hover:bg-violet-600 text-white transition-all duration-300 shadow-[0_0_10px_rgba(124,58,237,0.5)];
 }
+

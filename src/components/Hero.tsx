@@ -2,11 +2,13 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import NetworkAnimation from "./NetworkAnimation";
 
 const Hero = () => {
   return (
-    <div className="solo-gradient">
-      <div className="section-container">
+    <div className="solo-gradient group">
+      <div className="section-container relative overflow-hidden">
+        <NetworkAnimation />
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight solo-text">
