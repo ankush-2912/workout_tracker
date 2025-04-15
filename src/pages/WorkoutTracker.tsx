@@ -46,22 +46,40 @@ const WorkoutTracker = () => {
       <main className="flex-grow">
         <WorkoutHeader isAuthenticated={isAuthenticated} />
         
-        <div className="section-container py-8 bg-black">
+        <div className="section-container py-8 bg-black 
+          transition-all duration-500 ease-in-out 
+          hover:bg-gradient-to-r hover:from-black hover:via-violet-900/30 hover:to-black 
+          hover:backdrop-blur-xl 
+          hover:shadow-[0_0_50px_rgba(124,58,237,0.3)]
+          group">
           <Tabs 
             value={activeTab} 
             onValueChange={setActiveTab} 
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-900 hover:bg-slate-800 transition-colors duration-300">
+            <TabsList className="grid w-full grid-cols-2 mb-8 
+              bg-slate-900 
+              group-hover:bg-violet-900/20 
+              transition-colors duration-300">
               <TabsTrigger 
                 value="record" 
-                className="text-lg py-3 hover:bg-violet-900/30 transition-colors duration-300 data-[state=active]:bg-violet-900/50"
+                className="text-lg py-3 
+                  hover:bg-violet-900/30 
+                  transition-colors duration-300 
+                  data-[state=active]:bg-violet-900/50 
+                  group-hover:scale-[1.02] 
+                  hover:shadow-[0_0_15px_rgba(124,58,237,0.5)]"
               >
                 Record Workout
               </TabsTrigger>
               <TabsTrigger 
                 value="history" 
-                className="text-lg py-3 hover:bg-violet-900/30 transition-colors duration-300 data-[state=active]:bg-violet-900/50"
+                className="text-lg py-3 
+                  hover:bg-violet-900/30 
+                  transition-colors duration-300 
+                  data-[state=active]:bg-violet-900/50 
+                  group-hover:scale-[1.02] 
+                  hover:shadow-[0_0_15px_rgba(124,58,237,0.5)]"
               >
                 Workout History
               </TabsTrigger>
@@ -69,7 +87,11 @@ const WorkoutTracker = () => {
             
             <TabsContent 
               value="record" 
-              className="space-y-6 group hover:bg-slate-900/50 hover:backdrop-blur-sm transition-all duration-300 rounded-lg p-2"
+              className="space-y-6 
+                group-hover:bg-violet-900/10 
+                hover:backdrop-blur-sm 
+                transition-all duration-300 
+                rounded-lg p-2"
             >
               <WorkoutForm
                 currentWorkout={currentWorkout}
@@ -80,7 +102,11 @@ const WorkoutTracker = () => {
             
             <TabsContent 
               value="history" 
-              className="group hover:bg-slate-900/50 hover:backdrop-blur-sm transition-all duration-300 rounded-lg p-2"
+              className="
+                group-hover:bg-violet-900/10 
+                hover:backdrop-blur-sm 
+                transition-all duration-300 
+                rounded-lg p-2"
             >
               <WorkoutHistory 
                 workouts={workouts} 
@@ -99,3 +125,4 @@ const WorkoutTracker = () => {
 };
 
 export default WorkoutTracker;
+
