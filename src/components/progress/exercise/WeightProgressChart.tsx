@@ -1,6 +1,6 @@
 
 import React from "react";
-import { LineChart, BarChart2, LineChartIcon } from "lucide-react";
+import { BarChart2, LineChart as LineChartIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Line, 
