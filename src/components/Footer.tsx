@@ -79,8 +79,6 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>123 Fitness Street</li>
-              <li>Wellness City, WC 12345</li>
               <li>Phone: +91 99054XXXXX</li>
               <li>Instagram: @ankush_10010</li>
               <li>Telegram: @ankush_10010</li>
