@@ -1,6 +1,5 @@
-
 import { Link } from "react-router-dom";
-import { Dumbbell, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { Dumbbell, Facebook, Instagram, MessageCircle } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -16,17 +15,11 @@ const Footer = () => {
               Your ultimate resource for fitness information, workout guidance, and nutritional advice.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-primary">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary">
+              <a href="https://instagram.com/ankush_10010" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-primary">
-                <Youtube className="h-5 w-5" />
+              <a href="https://t.me/ankush_10010" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary">
+                <MessageCircle className="h-5 w-5" />
               </a>
             </div>
           </div>
@@ -88,8 +81,9 @@ const Footer = () => {
             <ul className="space-y-2 text-gray-400">
               <li>123 Fitness Street</li>
               <li>Wellness City, WC 12345</li>
-              <li>Email: info@fitpro.com</li>
-              <li>Phone: (123) 456-7890</li>
+              <li>Phone: +91 99054XXXXX</li>
+              <li>Instagram: @ankush_10010</li>
+              <li>Telegram: @ankush_10010</li>
             </ul>
           </div>
         </div>
