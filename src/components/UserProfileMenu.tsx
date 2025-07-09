@@ -1,6 +1,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import { User, LogOut, Settings } from 'lucide-react';
 
 export default function UserProfileMenu() {
   const { user, signOut, isAuthenticated } = useAuth();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -29,9 +31,10 @@ export default function UserProfileMenu() {
     );
   }
 
-  const initials = user?.email 
-    ? user.email.substring(0, 2).toUpperCase() 
-    : 'U';
+  const displayName = profile?.name || user?.email;
+  const initials = profile?.name 
+    ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <DropdownMenu>
@@ -47,7 +50,10 @@ export default function UserProfileMenu() {
       <DropdownMenuContent className="w-56" align="end">
         <div className="flex items-center justify-start gap-2 p-2">
           <div className="flex flex-col space-y-1 leading-none">
-            <p className="font-medium">{user?.email}</p>
+            {profile?.name && (
+              <p className="font-medium">{profile.name}</p>
+            )}
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
         </div>
         <DropdownMenuSeparator />

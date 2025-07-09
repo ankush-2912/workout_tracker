@@ -18,6 +18,7 @@ const Auth = () => {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Get the tab from the URL query params
@@ -34,6 +35,9 @@ const Auth = () => {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}`,
+          data: {
+            name: name
+          }
         },
       });
       
@@ -165,6 +169,17 @@ const Auth = () => {
                   </CardHeader>
                   <form onSubmit={handleSignUp}>
                     <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-name">Full Name</Label>
+                        <Input 
+                          id="signup-name" 
+                          type="text" 
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Enter your full name"
+                          required
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="signup-email">Email</Label>
                         <Input 
