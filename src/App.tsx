@@ -7,6 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Calculator from "./pages/Calculator";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import Exercises from "./pages/Exercises";
 import WorkoutTracker from "./pages/WorkoutTracker";
 import Progress from "./pages/Progress";
 import Auth from "./pages/Auth";
@@ -26,6 +29,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/calculator" element={<Calculator />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:id" element={<BlogPost />} />
+              <Route path="/exercises" element={<Exercises />} />
               <Route path="/workout-tracker" element={<WorkoutTracker />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/auth" element={<Auth />} />

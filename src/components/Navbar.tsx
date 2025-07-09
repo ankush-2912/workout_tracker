@@ -14,6 +14,8 @@ const Navbar = () => {
   
   const navLinks = [
     { label: 'Home', path: '/' },
+    { label: 'Blog', path: '/blog' },
+    { label: 'Exercises', path: '/exercises' },
     { label: 'Workout Tracker', path: '/workout-tracker' },
     { label: 'Progress', path: '/progress' },
     { label: 'Nutrition', path: '/calculator' },
