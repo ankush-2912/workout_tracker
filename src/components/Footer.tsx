@@ -33,11 +33,6 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/blog" className="text-gray-400 hover:text-primary">
-                  Blog
-                </Link>
-              </li>
-              <li>
                 <Link to="/exercises" className="text-gray-400 hover:text-primary">
                   Exercises
                 </Link>
@@ -45,6 +40,11 @@ const Footer = () => {
               <li>
                 <Link to="/calculator" className="text-gray-400 hover:text-primary">
                   Calorie Calculator
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="text-gray-400 hover:text-primary">
+                  Blog
                 </Link>
               </li>
             </ul>

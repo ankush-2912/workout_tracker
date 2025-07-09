@@ -41,32 +41,6 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold;
   }
-  
-  /* Prose styles for blog content */
-  .prose {
-    @apply text-foreground;
-  }
-  .prose h2 {
-    @apply text-2xl font-bold mt-8 mb-4 text-foreground;
-  }
-  .prose h3 {
-    @apply text-xl font-semibold mt-6 mb-3 text-foreground;
-  }
-  .prose p {
-    @apply mb-4 leading-relaxed;
-  }
-  .prose ul {
-    @apply mb-4 pl-6;
-  }
-  .prose li {
-    @apply mb-2 list-disc;
-  }
-  .prose blockquote {
-    @apply border-l-4 border-primary pl-4 italic my-6 text-muted-foreground;
-  }
-  .prose a {
-    @apply text-primary hover:underline;
-  }
 }
 
 @layer components {
