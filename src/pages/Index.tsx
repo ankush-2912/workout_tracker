@@ -37,33 +37,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Calorie Calculator CTA */}
-        <section className="section-container">
-          <div className="solo-card rounded-2xl overflow-hidden">
-            <div className="grid md:grid-cols-2 gap-8 p-8 md:p-12 items-center">
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold solo-text">Know Your Daily Calorie Needs</h2>
-                <p className="text-gray-300">
-                  Our advanced calorie calculator helps you determine your optimal daily caloric intake based on your goals, body composition, and activity level.
-                </p>
-                <Button asChild size="lg" className="solo-button">
-                  <Link to="/calculator" className="flex items-center">
-                    Try Calculator Now
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-              </div>
-              <div className="hidden md:block">
-                <img 
-                  src="https://images.unsplash.com/photo-1547919307-1ecb10702e6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-                  alt="Calorie calculator" 
-                  className="rounded-lg shadow-xl purple-glow mix-blend-luminosity opacity-80"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-        
         {/* Testimonials */}
         <section className="bg-slate-900/60 py-12 md:py-16">
           <div className="section-container">
